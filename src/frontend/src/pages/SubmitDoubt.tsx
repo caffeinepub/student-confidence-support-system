@@ -1,0 +1,471 @@
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { useNavigate } from "@tanstack/react-router";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Camera,
+  CheckCircle2,
+  Eye,
+  GraduationCap,
+  Loader2,
+  Send,
+  Shield,
+  Trash2,
+  Upload,
+  X,
+} from "lucide-react";
+import { useRef, useState } from "react";
+import { toast } from "sonner";
+import Header from "../components/Header";
+
+const SUBJECTS = [
+  "Mathematics",
+  "Physics",
+  "Chemistry",
+  "Biology",
+  "Computer Science",
+  "English",
+  "History",
+  "Geography",
+  "Economics",
+  "Other",
+];
+
+const STEPS = [
+  { n: 1, title: "Describe Your Doubt", icon: "📝" },
+  { n: 2, title: "Add Attachments", icon: "📎" },
+  { n: 3, title: "Review & Submit", icon: "🚀" },
+];
+
+interface ImagePreview {
+  url: string;
+  name: string;
+}
+
+interface FormState {
+  subject: string;
+  title: string;
+  description: string;
+  anonymous: boolean;
+  images: ImagePreview[];
+}
+
+export default function SubmitDoubt() {
+  const navigate = useNavigate();
+  const [step, setStep] = useState(1);
+  const [submitting, setSubmitting] = useState(false);
+  const [form, setForm] = useState<FormState>({
+    subject: "",
+    title: "",
+    description: "",
+    anonymous: false,
+    images: [],
+  });
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const updateForm = <K extends keyof FormState>(key: K, value: FormState[K]) =>
+    setForm((prev) => ({ ...prev, [key]: value }));
+
+  const handleFiles = (files: FileList | null) => {
+    if (!files) return;
+    const newImgs = Array.from(files)
+      .filter((f) => f.type.startsWith("image/"))
+      .slice(0, 4 - form.images.length)
+      .map((f) => ({ url: URL.createObjectURL(f), name: f.name }));
+    setForm((prev) => ({ ...prev, images: [...prev.images, ...newImgs] }));
+  };
+
+  const removeImage = (idx: number) =>
+    setForm((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== idx),
+    }));
+
+  const canProceed1 =
+    form.subject.length > 0 &&
+    form.title.trim().length > 5 &&
+    form.description.trim().length > 10;
+
+  const handleSubmit = async () => {
+    setSubmitting(true);
+    await new Promise((r) => setTimeout(r, 1800));
+    setSubmitting(false);
+    toast.success(
+      "Doubt submitted successfully! 🎉 A teacher will answer soon.",
+    );
+    navigate({ to: "/dashboard/student" });
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Header />
+      <main className="max-w-2xl mx-auto px-4 sm:px-6 py-12">
+        <div className="text-center mb-10">
+          <div className="w-14 h-14 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4 shadow-primary">
+            <GraduationCap className="w-7 h-7 text-white" />
+          </div>
+          <h1 className="font-display text-3xl font-bold text-foreground mb-2">
+            Submit a Doubt
+          </h1>
+          <p className="text-muted-foreground">
+            Your questions deserve answers. Ask freely — anonymously if you
+            prefer.
+          </p>
+        </div>
+
+        {/* Stepper */}
+        <div className="mb-8">
+          <div className="flex items-center">
+            {STEPS.map((s, i) => (
+              <div key={s.n} className="flex items-center flex-1">
+                <div className="flex flex-col items-center flex-1">
+                  <div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${
+                      step > s.n
+                        ? "gradient-primary text-white shadow-primary"
+                        : step === s.n
+                          ? "gradient-primary text-white shadow-primary"
+                          : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    {step > s.n ? <CheckCircle2 className="w-5 h-5" /> : s.n}
+                  </div>
+                  <div
+                    className={`text-xs mt-1.5 font-medium hidden sm:block ${
+                      step === s.n
+                        ? "text-primary"
+                        : step > s.n
+                          ? "text-green-600"
+                          : "text-muted-foreground"
+                    }`}
+                  >
+                    {s.title}
+                  </div>
+                </div>
+                {i < STEPS.length - 1 && (
+                  <div
+                    className={`h-0.5 flex-1 mx-2 rounded transition-all duration-500 ${
+                      step > s.n ? "bg-primary" : "bg-muted"
+                    }`}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <Card className="glass-card warm-shadow-lg border-white/40">
+          <CardContent className="p-6 sm:p-8">
+            {/* Step 1 */}
+            {step === 1 && (
+              <div className="space-y-5 animate-fade-in">
+                <h2 className="font-display text-xl font-bold text-foreground">
+                  📝 Describe Your Doubt
+                </h2>
+                <div className="space-y-2">
+                  <Label>Subject</Label>
+                  <Select
+                    value={form.subject}
+                    onValueChange={(v) => updateForm("subject", v)}
+                  >
+                    <SelectTrigger
+                      className="border-border"
+                      data-ocid="submit.select"
+                    >
+                      <SelectValue placeholder="Select a subject" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SUBJECTS.map((s) => (
+                        <SelectItem key={s} value={s}>
+                          {s}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Doubt Title</Label>
+                  <Input
+                    placeholder="e.g. Why does integration by parts work?"
+                    value={form.title}
+                    onChange={(e) => updateForm("title", e.target.value)}
+                    className="border-border"
+                    data-ocid="submit.input"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Describe in Detail</Label>
+                  <Textarea
+                    placeholder="Explain what you understand so far and what's confusing you. The more detail, the better the answer!"
+                    value={form.description}
+                    onChange={(e) => updateForm("description", e.target.value)}
+                    className="border-border min-h-[120px] resize-none"
+                    data-ocid="submit.textarea"
+                  />
+                  <div className="text-xs text-muted-foreground text-right">
+                    {form.description.length} chars
+                  </div>
+                </div>
+                <div className="flex items-start gap-4 p-4 rounded-xl bg-muted/50 border border-border">
+                  <Shield className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm font-semibold text-foreground">
+                          Submit Anonymously
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Your name won't be shown to teachers or classmates
+                        </div>
+                      </div>
+                      <Switch
+                        checked={form.anonymous}
+                        onCheckedChange={(v) => updateForm("anonymous", v)}
+                        data-ocid="submit.switch"
+                      />
+                    </div>
+                    {form.anonymous && (
+                      <div className="mt-2 text-xs text-green-600 font-medium flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> You'll appear
+                        as “Anonymous Student”
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Step 2 */}
+            {step === 2 && (
+              <div className="space-y-5 animate-slide-in-right">
+                <h2 className="font-display text-xl font-bold text-foreground">
+                  📎 Add Attachments{" "}
+                  <span className="text-sm font-normal text-muted-foreground">
+                    (optional)
+                  </span>
+                </h2>
+                <button
+                  type="button"
+                  className={`border-2 border-dashed rounded-2xl p-10 text-center transition-colors cursor-pointer w-full ${
+                    dragOver
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary/50"
+                  }`}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setDragOver(true);
+                  }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setDragOver(false);
+                    handleFiles(e.dataTransfer.files);
+                  }}
+                  onClick={() => fileInputRef.current?.click()}
+                  data-ocid="submit.dropzone"
+                >
+                  <Upload className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+                  <div className="text-sm font-medium text-foreground">
+                    Drag & drop images here
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    or click to browse · PNG, JPG up to 10MB · Max 4 images
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => handleFiles(e.target.files)}
+                    data-ocid="submit.upload_button"
+                  />
+                </button>
+                <Button
+                  variant="outline"
+                  className="w-full border-border rounded-xl"
+                  onClick={() => fileInputRef.current?.click()}
+                  data-ocid="submit.upload_button"
+                >
+                  <Camera className="w-4 h-4 mr-2" /> Take a Photo
+                </Button>
+                {form.images.length > 0 && (
+                  <div>
+                    <div className="text-sm font-medium text-foreground mb-3">
+                      {form.images.length} image(s) added
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      {form.images.map((img, i) => (
+                        <div
+                          key={img.url}
+                          className="relative group rounded-xl overflow-hidden border border-border warm-shadow"
+                        >
+                          <img
+                            src={img.url}
+                            alt={img.name}
+                            className="w-full h-28 object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(i)}
+                            className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            data-ocid={`submit.delete_button.${i + 1}`}
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                          <div className="p-2 text-xs text-muted-foreground truncate">
+                            {img.name}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Step 3 */}
+            {step === 3 && (
+              <div className="space-y-5 animate-slide-in-right">
+                <h2 className="font-display text-xl font-bold text-foreground">
+                  🚀 Review & Submit
+                </h2>
+                <Card className="border-border bg-muted/30">
+                  <CardContent className="p-5 space-y-3">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <span className="text-xs font-medium bg-primary/10 text-primary px-3 py-1 rounded-full">
+                        {form.subject || "No subject"}
+                      </span>
+                      {form.anonymous && (
+                        <span className="text-xs font-medium bg-green-100 text-green-700 px-3 py-1 rounded-full flex items-center gap-1">
+                          <Shield className="w-3 h-3" /> Anonymous
+                        </span>
+                      )}
+                    </div>
+                    <div className="font-display font-bold text-foreground text-lg">
+                      {form.title || "(No title)"}
+                    </div>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                      {form.description || "(No description)"}
+                    </p>
+                    {form.images.length > 0 && (
+                      <div>
+                        <div className="text-xs text-muted-foreground mb-2">
+                          {form.images.length} attachment(s)
+                        </div>
+                        <div className="flex gap-2">
+                          {form.images.map((img) => (
+                            <img
+                              key={img.url}
+                              src={img.url}
+                              alt={img.name}
+                              className="w-14 h-14 rounded-lg object-cover border border-border"
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+                <div className="p-4 rounded-xl bg-blue-50 border border-blue-100 text-sm text-blue-700">
+                  <strong>What happens next?</strong> Your doubt will be
+                  submitted, AI will cluster it with similar questions, and a
+                  teacher will respond — usually within 24 hours.
+                </div>
+                <Button
+                  className="w-full rounded-xl gradient-primary text-white font-semibold border-0 shadow-primary hover:opacity-90"
+                  size="lg"
+                  onClick={handleSubmit}
+                  disabled={submitting}
+                  data-ocid="submit.submit_button"
+                >
+                  {submitting ? (
+                    <>
+                      <Loader2 className="mr-2 w-4 h-4 animate-spin" />{" "}
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="mr-2 w-4 h-4" /> Submit Doubt
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+
+            {/* Nav buttons */}
+            <div className="flex items-center justify-between mt-8 pt-6 border-t border-border">
+              {step > 1 ? (
+                <Button
+                  variant="outline"
+                  className="rounded-xl"
+                  onClick={() => setStep((s) => s - 1)}
+                  data-ocid="submit.secondary_button"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" /> Back
+                </Button>
+              ) : (
+                <Button
+                  variant="ghost"
+                  className="rounded-xl text-muted-foreground"
+                  onClick={() => navigate({ to: "/" })}
+                  data-ocid="submit.cancel_button"
+                >
+                  <X className="w-4 h-4 mr-2" /> Cancel
+                </Button>
+              )}
+              {step < 3 ? (
+                <Button
+                  className="rounded-xl gradient-primary text-white border-0 font-medium"
+                  disabled={step === 1 ? !canProceed1 : false}
+                  onClick={() => setStep((s) => s + 1)}
+                  data-ocid="submit.primary_button"
+                >
+                  Next Step <ArrowRight className="ml-2 w-4 h-4" />
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  className="rounded-xl"
+                  onClick={() => setStep(1)}
+                  data-ocid="submit.secondary_button"
+                >
+                  <Eye className="w-4 h-4 mr-2" /> Edit
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Progress dots */}
+        <div className="flex justify-center gap-2 mt-6">
+          {STEPS.map((s) => (
+            <div
+              key={s.n}
+              className={`h-2 rounded-full transition-all duration-300 ${
+                step === s.n
+                  ? "w-8 bg-primary"
+                  : step > s.n
+                    ? "w-2 bg-green-500"
+                    : "w-2 bg-muted"
+              }`}
+            />
+          ))}
+        </div>
+      </main>
+    </div>
+  );
+}
