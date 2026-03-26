@@ -676,6 +676,47 @@ export default function StudentDashboard() {
           </Badge>
         </div>
 
+        {/* Learning Hub Shortcut */}
+        <button
+          type="button"
+          className="rounded-2xl warm-shadow overflow-hidden cursor-pointer w-full text-left"
+          style={{
+            background:
+              "linear-gradient(135deg, oklch(0.52 0.18 145 / 0.08) 0%, oklch(0.52 0.18 145 / 0.15) 100%)",
+            border: "1.5px solid oklch(0.52 0.18 145 / 0.25)",
+          }}
+          onClick={() => navigate({ to: "/learning" })}
+          data-ocid="student.learning.card"
+        >
+          <div className="p-5 flex items-center gap-5">
+            <div
+              className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
+              style={{
+                background:
+                  "linear-gradient(135deg, oklch(0.52 0.18 145) 0%, oklch(0.45 0.16 160) 100%)",
+              }}
+            >
+              🎓
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-display font-bold text-foreground text-base">
+                  Learning Hub
+                </span>
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">
+                  New!
+                </span>
+              </div>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                Lectures, DPP practice & 24/7 support — all in one place
+              </p>
+            </div>
+            <span className="text-primary font-bold text-lg flex-shrink-0">
+              →
+            </span>
+          </div>
+        </button>
+
         {/* Weekly Test CTA */}
         <div
           className="rounded-2xl warm-shadow overflow-hidden"

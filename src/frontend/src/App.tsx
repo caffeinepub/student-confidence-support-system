@@ -8,7 +8,9 @@ import {
   redirect,
 } from "@tanstack/react-router";
 import { Suspense, lazy } from "react";
+import { AppRole } from "./backend";
 import PageSkeleton from "./components/PageSkeleton";
+import { loadLocalProfile } from "./hooks/useLocalProfile";
 
 const LandingPage = lazy(() => import("./pages/LandingPage"));
 const OnboardingPage = lazy(() => import("./pages/OnboardingPage"));
@@ -21,6 +23,10 @@ const WeeklyTest = lazy(() => import("./pages/WeeklyTest"));
 const BlogList = lazy(() => import("./pages/BlogList"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
+const LearningHub = lazy(() => import("./pages/LearningHub"));
+const LecturesPage = lazy(() => import("./pages/LecturesPage"));
+const PracticePage = lazy(() => import("./pages/PracticePage"));
+const SupportPage = lazy(() => import("./pages/SupportPage"));
 
 const rootRoute = createRootRoute({
   component: () => (
@@ -56,6 +62,21 @@ const teacherDashboardRoute = createRoute({
   path: "/dashboard/teacher",
   component: TeacherDashboard,
 });
+// /dashboard redirect — sends user to role-specific dashboard
+const dashboardRedirectRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/dashboard",
+  beforeLoad: () => {
+    const profile = loadLocalProfile();
+    throw redirect({
+      to:
+        profile?.role === AppRole.teacher
+          ? "/dashboard/teacher"
+          : "/dashboard/student",
+    });
+  },
+  component: () => null,
+});
 const helpRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/help",
@@ -85,6 +106,26 @@ const profileRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/profile",
   component: ProfilePage,
+});
+const learningHubRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/learning",
+  component: LearningHub,
+});
+const lecturesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/learning/lectures",
+  component: LecturesPage,
+});
+const practiceRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/learning/practice",
+  component: PracticePage,
+});
+const supportRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/learning/support",
+  component: SupportPage,
 });
 
 // Short URL aliases
@@ -127,6 +168,7 @@ const routeTree = rootRoute.addChildren([
   submitRoute,
   studentDashboardRoute,
   teacherDashboardRoute,
+  dashboardRedirectRoute,
   helpRoute,
   chatRoute,
   weeklyTestRoute,
@@ -135,6 +177,10 @@ const routeTree = rootRoute.addChildren([
   blogAnonRoute,
   blogPostRoute,
   profileRoute,
+  learningHubRoute,
+  lecturesRoute,
+  practiceRoute,
+  supportRoute,
   catchAllRoute,
 ]);
 

@@ -11,6 +11,11 @@ import { loadLocalProfile, saveLocalProfile } from "../hooks/useLocalProfile";
 
 const INTERESTS = ["Maths", "Physics", "Programming", "Electronics", "Biology"];
 
+function getDashboardPath(role?: AppRole): string {
+  if (role === AppRole.teacher) return "/dashboard/teacher";
+  return "/dashboard/student";
+}
+
 export default function ProfilePage() {
   const navigate = useNavigate();
   const profile = loadLocalProfile();
@@ -33,6 +38,12 @@ export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [saving, setSaving] = useState(false);
+
+  const dashboardPath = getDashboardPath(profile?.role);
+
+  const goBack = () => {
+    navigate({ to: dashboardPath });
+  };
 
   // Start camera
   const startCamera = useCallback(async () => {
@@ -136,6 +147,10 @@ export default function ProfilePage() {
         profileImageUrl,
       });
       toast.success("Profile saved!");
+      // Redirect to dashboard after saving
+      setTimeout(() => {
+        navigate({ to: dashboardPath });
+      }, 800);
     } catch (err) {
       console.error(err);
       toast.error("Failed to save profile");
@@ -166,7 +181,7 @@ export default function ProfilePage() {
         <div className="max-w-2xl mx-auto flex items-center gap-3">
           <button
             type="button"
-            onClick={() => navigate({ to: -1 as never })}
+            onClick={goBack}
             className="w-9 h-9 rounded-full glass-card flex items-center justify-center hover:bg-muted/60 transition-colors"
             data-ocid="profile.link"
           >
