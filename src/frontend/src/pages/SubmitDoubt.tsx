@@ -22,7 +22,6 @@ import {
   Loader2,
   Send,
   Shield,
-  Trash2,
   Upload,
   X,
 } from "lucide-react";
@@ -75,6 +74,7 @@ export default function SubmitDoubt() {
   });
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const updateForm = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -257,12 +257,62 @@ export default function SubmitDoubt() {
                     (optional)
                   </span>
                 </h2>
+
+                {/* Hidden file inputs */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => handleFiles(e.target.files)}
+                  data-ocid="submit.upload_button"
+                />
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={(e) => handleFiles(e.target.files)}
+                  data-ocid="submit.camera_input"
+                />
+
+                {/* Primary action buttons */}
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => cameraInputRef.current?.click()}
+                    className="flex flex-col items-center justify-center gap-2.5 p-6 rounded-2xl gradient-primary text-white font-semibold shadow-primary hover:opacity-90 transition-opacity"
+                    data-ocid="submit.camera_button"
+                  >
+                    <Camera className="w-8 h-8" />
+                    <span className="text-sm">Take Photo</span>
+                    <span className="text-xs opacity-80 font-normal">
+                      Opens camera directly
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex flex-col items-center justify-center gap-2.5 p-6 rounded-2xl border-2 border-border bg-muted/30 text-foreground font-semibold hover:border-primary/50 hover:bg-muted/60 transition-colors"
+                    data-ocid="submit.upload_button"
+                  >
+                    <Upload className="w-8 h-8 text-muted-foreground" />
+                    <span className="text-sm">Upload Image</span>
+                    <span className="text-xs text-muted-foreground font-normal">
+                      From gallery or files
+                    </span>
+                  </button>
+                </div>
+
+                {/* Drag-and-drop zone (smaller, secondary) */}
                 <button
                   type="button"
-                  className={`border-2 border-dashed rounded-2xl p-10 text-center transition-colors cursor-pointer w-full ${
+                  className={`border border-dashed rounded-xl p-4 text-center transition-colors cursor-pointer w-full ${
                     dragOver
                       ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
+                      : "border-border hover:border-primary/40"
                   }`}
                   onDragOver={(e) => {
                     e.preventDefault();
@@ -277,31 +327,12 @@ export default function SubmitDoubt() {
                   onClick={() => fileInputRef.current?.click()}
                   data-ocid="submit.dropzone"
                 >
-                  <Upload className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-                  <div className="text-sm font-medium text-foreground">
-                    Drag & drop images here
+                  <div className="text-xs text-muted-foreground">
+                    Or drag & drop images here · PNG, JPG up to 10MB · Max 4
+                    images
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    or click to browse · PNG, JPG up to 10MB · Max 4 images
-                  </div>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    className="hidden"
-                    onChange={(e) => handleFiles(e.target.files)}
-                    data-ocid="submit.upload_button"
-                  />
                 </button>
-                <Button
-                  variant="outline"
-                  className="w-full border-border rounded-xl"
-                  onClick={() => fileInputRef.current?.click()}
-                  data-ocid="submit.upload_button"
-                >
-                  <Camera className="w-4 h-4 mr-2" /> Take a Photo
-                </Button>
+
                 {form.images.length > 0 && (
                   <div>
                     <div className="text-sm font-medium text-foreground mb-3">
