@@ -51,75 +51,6 @@ interface Doubt {
   answer?: DoubtAnswer;
 }
 
-const INITIAL_DOUBTS: Doubt[] = [
-  {
-    id: 1,
-    student: "Arjun S.",
-    subject: "Mathematics",
-    subjectColor: "bg-blue-100 text-blue-700",
-    title: "Why does the limit of sin(x)/x as x→0 equal 1?",
-    description:
-      "I understand that we can evaluate limits in general, but I'm not sure why this specific case equals 1. I tried L'Hopital's rule but it feels circular. Can you explain using geometry?",
-    timeAgo: "2h ago",
-    priority: "High",
-    status: "pending",
-  },
-  {
-    id: 2,
-    student: "Anonymous",
-    subject: "Physics",
-    subjectColor: "bg-orange-100 text-orange-700",
-    title: "How does a transformer work and why can't it use DC?",
-    description:
-      "I know transformers are used in power transmission but don't understand the principle. My textbook mentions Faraday's law but I need a clearer intuition.",
-    timeAgo: "3h ago",
-    priority: "High",
-    status: "pending",
-  },
-  {
-    id: 3,
-    student: "Priya M.",
-    subject: "Chemistry",
-    subjectColor: "bg-green-100 text-green-700",
-    title: "What is the difference between ionic and covalent bonds?",
-    description:
-      "Both are chemical bonds but I always get confused about when each type forms and what determines which type will form between two elements.",
-    timeAgo: "5h ago",
-    priority: "Medium",
-    status: "pending",
-  },
-  {
-    id: 4,
-    student: "Rahul K.",
-    subject: "Computer Science",
-    subjectColor: "bg-purple-100 text-purple-700",
-    title: "What's the difference between a stack and a queue?",
-    description:
-      "I know both are data structures but can't understand the practical difference and when to use which one. Real-world examples would help.",
-    timeAgo: "1d ago",
-    priority: "Low",
-    status: "answered",
-    answer: {
-      text: "Stack follows LIFO (Last In, First Out) — like a pile of plates. Queue follows FIFO (First In, First Out) — like a line at a ticket counter. Use stacks for recursion, undo features, and expression evaluation. Use queues for BFS, scheduling, and task processing.",
-    },
-  },
-  {
-    id: 5,
-    student: "Sneha R.",
-    subject: "Biology",
-    subjectColor: "bg-teal-100 text-teal-700",
-    title: "How does DNA replication ensure accuracy?",
-    description:
-      "I understand the basic mechanism of DNA replication but want to know how errors are prevented and what happens when they occur.",
-    timeAgo: "2d ago",
-    priority: "Low",
-    status: "answered",
-    answer: {
-      text: "DNA polymerase has built-in proofreading (3’→5’ exonuclease activity) that removes mismatched bases. Post-replication mismatch repair (MMR) fixes remaining errors. Error rate is ~1 in 10⁹ bases after all repair mechanisms.",
-    },
-  },
-];
-
 const PRIORITY_COLORS: Record<Priority, string> = {
   High: "bg-red-100 text-red-700 border-red-200",
   Medium: "bg-amber-100 text-amber-700 border-amber-200",
@@ -565,52 +496,49 @@ function DoubtCard({
   );
 }
 
-const TEACHER_MOCK_NOTIFICATIONS = [
-  {
-    id: 1,
-    icon: "❓",
-    type: "doubt",
-    relatedId: 1,
-    text: "Arjun S. submitted a new doubt: 'Why does sin(x)/x → 1?'",
-    time: "5 min ago",
-    read: false,
-  },
-  {
-    id: 2,
-    icon: "💬",
-    type: "reply",
-    relatedId: 2,
-    text: "Priya M. replied to your answer on 'Ionic vs Covalent Bonds'",
-    time: "1h ago",
-    read: false,
-  },
-  {
-    id: 3,
-    icon: "⭐",
-    type: "rating",
-    relatedId: 3,
-    text: "Rahul K. rated your answer 4/5 stars on 'Stack vs Queue'",
-    time: "2h ago",
-    read: false,
-  },
-  {
-    id: 4,
-    icon: "✉️",
-    type: "message",
-    relatedId: "student_sneha",
-    text: "New personal message from Sneha R.: 'Thank you for the explanation!'",
-    time: "3h ago",
-    read: true,
-  },
-];
+type TeacherNotifItem = {
+  id: number;
+  icon: string;
+  type: string;
+  relatedId: number | string | null;
+  text: string;
+  time: string;
+  read: boolean;
+};
 
 export default function TeacherDashboard() {
   const navigate = useNavigate();
   const localProfile = loadLocalProfile();
-  const [doubts, setDoubts] = useState<Doubt[]>(INITIAL_DOUBTS);
-  const [teacherNotifs, setTeacherNotifs] = useState(
-    TEACHER_MOCK_NOTIFICATIONS,
-  );
+  const [doubts, setDoubts] = useState<Doubt[]>(() => {
+    try {
+      const raw = JSON.parse(
+        localStorage.getItem("askspark_doubts") || "[]",
+      ) as Array<{
+        id: string;
+        subject: string;
+        subjectColor: string;
+        title: string;
+        timestamp: number;
+        userId: string;
+      }>;
+      return raw.map((d, i) => ({
+        id: i + 1,
+        student: "Anonymous Student",
+        subject: d.subject || "General",
+        subjectColor: d.subjectColor || "bg-gray-100 text-gray-700",
+        title: d.title,
+        description: "",
+        timeAgo: d.timestamp
+          ? new Date(d.timestamp).toLocaleDateString()
+          : "Unknown",
+        priority: "Medium" as Priority,
+        status: "pending" as const,
+      }));
+    } catch {
+      return [];
+    }
+  });
+  const [teacherNotifs, setTeacherNotifs] = useState<TeacherNotifItem[]>([]);
   const [teacherNotifOpen, setTeacherNotifOpen] = useState(false);
   const teacherNotifRef = useRef<HTMLDivElement>(null);
   const teacherUnreadCount = teacherNotifs.filter((n) => !n.read).length;
@@ -655,7 +583,7 @@ export default function TeacherDashboard() {
     setTeacherNotifs((prev) => prev.map((n) => ({ ...n, read: true })));
   }
 
-  function handleTeacherNotifClick(n: (typeof TEACHER_MOCK_NOTIFICATIONS)[0]) {
+  function handleTeacherNotifClick(n: TeacherNotifItem) {
     markTeacherNotifRead(n.id);
     setTeacherNotifOpen(false);
     if (n.type === "doubt" || n.type === "reply" || n.type === "rating") {
@@ -754,6 +682,11 @@ export default function TeacherDashboard() {
                     )}
                   </div>
                   <div className="max-h-72 overflow-y-auto">
+                    {teacherNotifs.length === 0 && (
+                      <div className="py-6 text-center text-sm text-muted-foreground">
+                        No notifications yet
+                      </div>
+                    )}
                     {teacherNotifs.map((n) => (
                       <button
                         key={n.id}

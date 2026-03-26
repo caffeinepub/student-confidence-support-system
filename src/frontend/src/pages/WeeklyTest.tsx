@@ -319,8 +319,51 @@ export default function WeeklyTest() {
   }
 
   function handleNext() {
-    if (currentQ < questions.length - 1) setCurrentQ((c) => c + 1);
-    else setPhase("results");
+    if (currentQ < questions.length - 1) {
+      setCurrentQ((c) => c + 1);
+    } else {
+      // Save test result to localStorage
+      const correct = questions.filter(
+        (q) => answers[q.id] === q.answer,
+      ).length;
+      const pct = Math.round((correct / questions.length) * 100);
+      const allTopics = [...new Set(questions.map((q) => q.topic))];
+      const topicResults = allTopics.map((topic) => {
+        const qs = questions.filter((q) => q.topic === topic);
+        const topicCorrect = qs.filter(
+          (q) => answers[q.id] === q.answer,
+        ).length;
+        return { topic, pct: Math.round((topicCorrect / qs.length) * 100) };
+      });
+      const strong = topicResults
+        .filter((t) => t.pct >= 70)
+        .map((t) => t.topic);
+      const fearZones = topicResults
+        .filter((t) => t.pct < 50)
+        .map((t) => t.topic);
+      const newResult = {
+        week: weekNumber,
+        score: pct,
+        strong,
+        fearZones,
+        date: new Date().toLocaleDateString(),
+      };
+      try {
+        const existing = JSON.parse(
+          localStorage.getItem("askspark_test_history") || "[]",
+        );
+        const filtered = existing.filter(
+          (r: { week: number }) => r.week !== weekNumber,
+        );
+        localStorage.setItem(
+          "askspark_test_history",
+          JSON.stringify([newResult, ...filtered].slice(0, 20)),
+        );
+      } catch {
+        /* ignore */
+      }
+      setPhase("results");
+    }
   }
 
   function toggleNote(topic: string) {

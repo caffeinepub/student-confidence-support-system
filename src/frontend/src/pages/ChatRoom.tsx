@@ -11,7 +11,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MessageCircle, Plus, Search, Send, Shield, Users } from "lucide-react";
+import {
+  MessageCircle,
+  MessageSquare,
+  Plus,
+  Search,
+  Send,
+  Shield,
+  Users,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -70,277 +78,6 @@ const ROOMS: Room[] = [
   { id: "general", name: "General", members: 389, icon: "💬" },
 ];
 
-const ROOM_MESSAGES: Record<string, ChatMessage[]> = {
-  math: [
-    {
-      id: 1,
-      user: "Arjun S.",
-      initials: "AS",
-      color: "bg-indigo-500",
-      text: "Can someone explain how to approach integration by parts? I keep getting confused about which part to differentiate.",
-      time: "10:12 AM",
-    },
-    {
-      id: 2,
-      user: "Priya M.",
-      initials: "PM",
-      color: "bg-violet-500",
-      text: "The LIATE rule helps! Choose u in order: Logarithm, Inverse trig, Algebraic, Trigonometric, Exponential.",
-      time: "10:14 AM",
-    },
-    {
-      id: 3,
-      user: "Rahul K.",
-      initials: "RK",
-      color: "bg-emerald-500",
-      text: "Also practice with ∫x·eˣ dx first — it's the classic example that makes the rule click.",
-      time: "10:17 AM",
-    },
-    {
-      id: 4,
-      user: "Sneha T.",
-      initials: "ST",
-      color: "bg-rose-500",
-      text: "I struggled too until I did 20+ practice problems. Repetition is key with this one.",
-      time: "10:19 AM",
-    },
-    {
-      id: 5,
-      user: "Arjun S.",
-      initials: "AS",
-      color: "bg-indigo-500",
-      text: "Thanks everyone! LIATE is super helpful. Going to try those practice problems tonight.",
-      time: "10:21 AM",
-    },
-  ],
-  physics: [
-    {
-      id: 1,
-      user: "Meera N.",
-      initials: "MN",
-      color: "bg-orange-500",
-      text: "Why does a spinning gyroscope not fall over? The precession concept really confuses me.",
-      time: "9:45 AM",
-    },
-    {
-      id: 2,
-      user: "Dev P.",
-      initials: "DP",
-      color: "bg-sky-500",
-      text: "It's angular momentum conservation! Gravity applies torque, and the gyroscope responds by precessing rather than falling.",
-      time: "9:47 AM",
-    },
-    {
-      id: 3,
-      user: "Kiran B.",
-      initials: "KB",
-      color: "bg-teal-500",
-      text: "Watch a 3Blue1Brown video on it — the visual explanation of torque as a vector makes it instantly clear.",
-      time: "9:50 AM",
-    },
-  ],
-  chemistry: [
-    {
-      id: 1,
-      user: "Ananya R.",
-      initials: "AR",
-      color: "bg-green-500",
-      text: "How do I know when a reaction is endothermic vs exothermic just from looking at the equation?",
-      time: "11:02 AM",
-    },
-    {
-      id: 2,
-      user: "Vijay C.",
-      initials: "VC",
-      color: "bg-lime-600",
-      text: "Check if heat is a reactant (endothermic) or product (exothermic). Also ΔH sign: negative = exothermic, positive = endothermic.",
-      time: "11:05 AM",
-    },
-  ],
-  cs: [
-    {
-      id: 1,
-      user: "Rohan J.",
-      initials: "RJ",
-      color: "bg-purple-500",
-      text: "What's the best way to learn dynamic programming? I understand the concept but can't apply it to new problems.",
-      time: "2:10 PM",
-    },
-    {
-      id: 2,
-      user: "Tanvi S.",
-      initials: "TS",
-      color: "bg-fuchsia-500",
-      text: "Start by solving every problem on Leetcode tagged 'DP' from Easy to Hard. Don't skip — even easy ones have tricks.",
-      time: "2:12 PM",
-    },
-    {
-      id: 3,
-      user: "Aditya M.",
-      initials: "AM",
-      color: "bg-cyan-500",
-      text: "Also look up 'Think like a DP pro' on YouTube. The pattern recognition approach changed everything for me.",
-      time: "2:15 PM",
-    },
-    {
-      id: 4,
-      user: "Rohan J.",
-      initials: "RJ",
-      color: "bg-purple-500",
-      text: "Legend! Bookmarking this. Starting tonight.",
-      time: "2:17 PM",
-    },
-  ],
-  general: [
-    {
-      id: 1,
-      user: "Ishaan K.",
-      initials: "IK",
-      color: "bg-amber-500",
-      text: "How many hours a day do you all study? I feel like I'm always behind.",
-      time: "3:30 PM",
-    },
-    {
-      id: 2,
-      user: "Pooja V.",
-      initials: "PV",
-      color: "bg-pink-500",
-      text: "Quality > quantity. 4 focused hours beats 8 distracted ones. Try Pomodoro technique!",
-      time: "3:32 PM",
-    },
-    {
-      id: 3,
-      user: "Sameer H.",
-      initials: "SH",
-      color: "bg-slate-500",
-      text: "Also sleep! Memory consolidation happens during sleep. Don't pull all-nighters before exams.",
-      time: "3:35 PM",
-    },
-  ],
-};
-
-const INITIAL_CONVERSATIONS: Conversation[] = [
-  {
-    id: 1,
-    name: "Priya Mehta",
-    initials: "PM",
-    color: "bg-violet-500",
-    lastMessage: "Thanks for the notes on organic chemistry!",
-    time: "10:30 AM",
-    unread: 2,
-    messages: [
-      {
-        id: 1,
-        user: "Priya Mehta",
-        initials: "PM",
-        color: "bg-violet-500",
-        text: "Hey! Did you understand the hybridization topic in today's class?",
-        time: "10:15 AM",
-      },
-      {
-        id: 2,
-        user: "You",
-        initials: "ME",
-        color: "bg-indigo-500",
-        text: "Yeah, sp3 hybridization was a bit tricky but I think I got it. The tetrahedral geometry part made sense once I drew the diagram.",
-        time: "10:20 AM",
-        isOwn: true,
-      },
-      {
-        id: 3,
-        user: "Priya Mehta",
-        initials: "PM",
-        color: "bg-violet-500",
-        text: "Thanks for the notes on organic chemistry!",
-        time: "10:30 AM",
-      },
-    ],
-  },
-  {
-    id: 2,
-    name: "Rahul Kapoor",
-    initials: "RK",
-    color: "bg-emerald-500",
-    lastMessage: "Let's form a study group for the midterms",
-    time: "Yesterday",
-    unread: 0,
-    messages: [
-      {
-        id: 1,
-        user: "Rahul Kapoor",
-        initials: "RK",
-        color: "bg-emerald-500",
-        text: "Midterms are in 3 weeks. Want to form a study group?",
-        time: "Yesterday",
-      },
-      {
-        id: 2,
-        user: "You",
-        initials: "ME",
-        color: "bg-indigo-500",
-        text: "Definitely! I'm struggling with physics the most. Can we cover that first?",
-        time: "Yesterday",
-        isOwn: true,
-      },
-      {
-        id: 3,
-        user: "Rahul Kapoor",
-        initials: "RK",
-        color: "bg-emerald-500",
-        text: "Let's form a study group for the midterms",
-        time: "Yesterday",
-      },
-    ],
-  },
-  {
-    id: 3,
-    name: "Sneha Tiwari",
-    initials: "ST",
-    color: "bg-rose-500",
-    lastMessage: "I shared the calculus formula sheet in math room",
-    time: "Mon",
-    unread: 1,
-    messages: [
-      {
-        id: 1,
-        user: "Sneha Tiwari",
-        initials: "ST",
-        color: "bg-rose-500",
-        text: "I shared the calculus formula sheet in math room",
-        time: "Mon",
-      },
-    ],
-  },
-  {
-    id: 4,
-    name: "Aditya Mishra",
-    initials: "AM",
-    color: "bg-cyan-500",
-    lastMessage: "Check out this DP problem — it's on the exam pattern",
-    time: "Sun",
-    unread: 0,
-    messages: [
-      {
-        id: 1,
-        user: "Aditya Mishra",
-        initials: "AM",
-        color: "bg-cyan-500",
-        text: "Check out this DP problem — it's on the exam pattern",
-        time: "Sun",
-      },
-      {
-        id: 2,
-        user: "You",
-        initials: "ME",
-        color: "bg-indigo-500",
-        text: "Thanks! Saving it for my practice session this weekend.",
-        time: "Sun",
-        isOwn: true,
-      },
-    ],
-  },
-];
-
 const AVATAR_COLORS = [
   "bg-indigo-500",
   "bg-violet-500",
@@ -355,8 +92,7 @@ const AVATAR_COLORS = [
 function GroupChatTab() {
   const [activeRoom, setActiveRoom] = useState("cs");
   const [input, setInput] = useState("");
-  const [messages, setMessages] =
-    useState<Record<string, ChatMessage[]>>(ROOM_MESSAGES);
+  const [messages, setMessages] = useState<Record<string, ChatMessage[]>>({});
   const [violations, setViolations] = useState(0);
   const [isBanned, setIsBanned] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -490,6 +226,20 @@ function GroupChatTab() {
 
         {/* Messages */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
+          {roomMessages.length === 0 && (
+            <div
+              className="flex-1 flex items-center justify-center text-center p-8 text-muted-foreground h-full"
+              data-ocid="chat.empty_state"
+            >
+              <div>
+                <MessageSquare className="w-10 h-10 mx-auto mb-3 opacity-20" />
+                <p className="font-medium">No messages yet</p>
+                <p className="text-sm mt-1">
+                  Be the first to start the conversation!
+                </p>
+              </div>
+            </div>
+          )}
           {roomMessages.map((msg) => (
             <div
               key={msg.id}
@@ -596,9 +346,7 @@ function GroupChatTab() {
 }
 
 function PersonalMessagesTab() {
-  const [conversations, setConversations] = useState<Conversation[]>(
-    INITIAL_CONVERSATIONS,
-  );
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedId, setSelectedId] = useState<number>(1);
   const [input, setInput] = useState("");
   const [violations, setViolations] = useState(0);
@@ -608,7 +356,7 @@ function PersonalMessagesTab() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const nextMsgId = useRef(500);
 
-  const selected = conversations.find((c) => c.id === selectedId)!;
+  const selected = conversations.find((c) => c.id === selectedId);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: scrollRef is stable
   useEffect(() => {
@@ -731,6 +479,15 @@ function PersonalMessagesTab() {
         </div>
         <ScrollArea className="flex-1">
           <div className="p-2 space-y-1">
+            {conversations.length === 0 && (
+              <div
+                className="p-6 text-center text-muted-foreground text-sm"
+                data-ocid="chat.empty_state"
+              >
+                <p>No conversations yet</p>
+                <p className="text-xs mt-1">Start a new chat below</p>
+              </div>
+            )}
             {conversations.map((convo) => (
               <button
                 key={convo.id}
@@ -780,91 +537,110 @@ function PersonalMessagesTab() {
 
       {/* Chat area */}
       <div className="flex-1 flex flex-col bg-white/40 backdrop-blur-sm min-w-0">
-        <div className="px-4 py-3 border-b border-white/40 bg-white/30 flex items-center gap-3">
-          <Avatar className="w-8 h-8">
-            <AvatarFallback
-              className={`${selected.color} text-white text-xs font-bold`}
-            >
-              {selected.initials}
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <div className="font-semibold text-foreground text-sm">
-              {selected.name}
-            </div>
-            <div className="text-[10px] text-green-500 font-medium">
-              ● Online
+        {!selected ? (
+          <div className="flex-1 flex items-center justify-center text-center p-8 text-muted-foreground">
+            <div>
+              <MessageSquare className="w-10 h-10 mx-auto mb-3 opacity-20" />
+              <p className="font-medium">Select a conversation</p>
+              <p className="text-sm mt-1">
+                Or start a new chat using the + button
+              </p>
             </div>
           </div>
-        </div>
-
-        <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
-          {selected.messages.length === 0 && (
-            <div className="h-full flex items-center justify-center">
-              <div className="text-center text-muted-foreground">
-                <MessageCircle className="w-10 h-10 mx-auto mb-2 opacity-30" />
-                <p className="text-sm">No messages yet. Say hello!</p>
-              </div>
-            </div>
-          )}
-          {selected.messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`flex gap-2.5 ${
-                msg.isOwn ? "flex-row-reverse" : "flex-row"
-              }`}
-            >
-              <Avatar className="w-7 h-7 flex-shrink-0">
+        ) : (
+          <>
+            <div className="px-4 py-3 border-b border-white/40 bg-white/30 flex items-center gap-3">
+              <Avatar className="w-8 h-8">
                 <AvatarFallback
-                  className={`${msg.color} text-white text-[10px] font-bold`}
+                  className={`${selected.color} text-white text-xs font-bold`}
                 >
-                  {msg.initials}
+                  {selected.initials}
                 </AvatarFallback>
               </Avatar>
-              <div
-                className={`max-w-xs flex flex-col gap-0.5 ${
-                  msg.isOwn ? "items-end" : "items-start"
-                }`}
-              >
-                <div
-                  className={`px-3 py-2 rounded-2xl text-sm ${
-                    msg.isOwn
-                      ? "gradient-primary text-white rounded-tr-sm"
-                      : "bg-white/80 text-foreground rounded-tl-sm"
-                  }`}
-                >
-                  {msg.text}
+              <div>
+                <div className="font-semibold text-foreground text-sm">
+                  {selected.name}
                 </div>
-                <div className="text-[10px] text-muted-foreground">
-                  {msg.time}
+                <div className="text-[10px] text-green-500 font-medium">
+                  ● Online
                 </div>
               </div>
             </div>
-          ))}
-        </div>
 
-        <div className="p-3 border-t border-white/40 bg-white/30">
-          <div className="flex gap-2">
-            <Input
-              placeholder={isBanned ? "You are banned" : "Type a message..."}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKey}
-              disabled={isBanned}
-              className="flex-1 rounded-full border-border/60 bg-white/70"
-              data-ocid="chat.input"
-            />
-            <Button
-              size="icon"
-              onClick={sendMessage}
-              disabled={isBanned || !input.trim()}
-              className="rounded-full gradient-primary text-white border-0 w-9 h-9 flex-shrink-0"
-              data-ocid="chat.primary_button"
+            <div
+              ref={scrollRef}
+              className="flex-1 overflow-y-auto p-4 space-y-3"
             >
-              <Send className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
+              {selected.messages.length === 0 && (
+                <div className="h-full flex items-center justify-center">
+                  <div className="text-center text-muted-foreground">
+                    <MessageCircle className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                    <p className="text-sm">No messages yet. Say hello!</p>
+                  </div>
+                </div>
+              )}
+              {selected.messages.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={`flex gap-2.5 ${
+                    msg.isOwn ? "flex-row-reverse" : "flex-row"
+                  }`}
+                >
+                  <Avatar className="w-7 h-7 flex-shrink-0">
+                    <AvatarFallback
+                      className={`${msg.color} text-white text-[10px] font-bold`}
+                    >
+                      {msg.initials}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div
+                    className={`max-w-xs flex flex-col gap-0.5 ${
+                      msg.isOwn ? "items-end" : "items-start"
+                    }`}
+                  >
+                    <div
+                      className={`px-3 py-2 rounded-2xl text-sm ${
+                        msg.isOwn
+                          ? "gradient-primary text-white rounded-tr-sm"
+                          : "bg-white/80 text-foreground rounded-tl-sm"
+                      }`}
+                    >
+                      {msg.text}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground">
+                      {msg.time}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="p-3 border-t border-white/40 bg-white/30">
+              <div className="flex gap-2">
+                <Input
+                  placeholder={
+                    isBanned ? "You are banned" : "Type a message..."
+                  }
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKey}
+                  disabled={isBanned}
+                  className="flex-1 rounded-full border-border/60 bg-white/70"
+                  data-ocid="chat.input"
+                />
+                <Button
+                  size="icon"
+                  onClick={sendMessage}
+                  disabled={isBanned || !input.trim()}
+                  className="rounded-full gradient-primary text-white border-0 w-9 h-9 flex-shrink-0"
+                  data-ocid="chat.primary_button"
+                >
+                  <Send className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* New Chat Dialog */}

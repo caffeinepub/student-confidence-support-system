@@ -51,49 +51,192 @@ const FAQS = [
   },
 ];
 
-type Message = { id: number; text: string; isUser: boolean; time: string };
+type Message = {
+  id: number;
+  text: string;
+  isUser: boolean;
+  time: string;
+  showQuickButtons?: boolean;
+  relatedDoubts?: string[];
+};
 
 const WELCOME_MESSAGE: Message = {
   id: 1,
   text: "👋 Hi! I'm **AskSpark Bot**. I can guide you around AskSpark. Ask me anything!",
   isUser: false,
   time: "just now",
+  showQuickButtons: true,
 };
 
-function getBotReply(input: string): string {
+function getBotReply(input: string): {
+  text: string;
+  showQuickButtons?: boolean;
+} {
   const msg = input.toLowerCase();
-  if (msg.includes("doubt"))
-    return "You can submit your doubt in the **Submit Doubt** section. Just type your question, select your subject, and hit submit — no login required! 🎯";
-  if (msg.includes("profile"))
-    return "To update your details, go to your **Profile page**. You can change your name, class/branch, interests, and even upload a profile photo. ✏️";
-  if (msg.includes("lecture"))
-    return "Check the **Learning Hub → Lectures** section for both live classes and recorded videos. 🎓";
-  if (msg.includes("test") || msg.includes("quiz"))
-    return "The **Weekly Test** section on your dashboard auto-generates MCQs based on popular topics from your class/branch. 📝";
-  if (msg.includes("point") || msg.includes("reward"))
-    return "You earn **+10 points** for asking a doubt and **+20 points** for inviting a friend. Check the leaderboard on your dashboard! 🏆";
-  if (msg.includes("chat"))
-    return "You can chat with students and teachers in the **Chat** section. Join a study room or send personal messages. 💬";
-  if (msg.includes("hello") || msg.includes("hi"))
-    return "Hello! 👋 I'm AskSpark Bot. Ask me anything about using the platform!";
-  return "I'm here to help! Please ask your question, or try typing: **doubt**, **profile**, **lecture**, **test**, or **chat**. 🤖";
+
+  if (msg.includes("doubt") || msg.includes("ask") || msg.includes("submit"))
+    return {
+      text: "Here's how to submit a doubt:\n1. Click **Submit Doubt** in the menu\n2. Type your question\n3. Choose your subject\n4. Hit Submit — done! No login needed. 🎯",
+    };
+
+  if (
+    msg.includes("profile") ||
+    msg.includes("edit") ||
+    msg.includes("photo") ||
+    msg.includes("picture")
+  )
+    return {
+      text: "Go to your **Profile page** → click Edit Profile. You can update your name, photo, class/branch, and interests. ✏️",
+    };
+
+  if (
+    msg.includes("lecture") ||
+    msg.includes("video") ||
+    msg.includes("class") ||
+    msg.includes("recorded")
+  )
+    return {
+      text: "Open **Learning Hub → Lectures** to watch live sessions or recorded videos. 🎓",
+    };
+
+  if (
+    msg.includes("test") ||
+    msg.includes("quiz") ||
+    msg.includes("dpp") ||
+    msg.includes("practice") ||
+    msg.includes("mcq")
+  )
+    return {
+      text: "Go to **Learning Hub → Practice** for DPP questions. Weekly tests are on your dashboard too! 📝",
+    };
+
+  if (msg.includes("chat") || msg.includes("message") || msg.includes("talk"))
+    return {
+      text: "Use the **Chat** section to join study rooms or send direct messages to teachers and students. 💬",
+    };
+
+  if (
+    msg.includes("support") ||
+    msg.includes("help") ||
+    msg.includes("problem") ||
+    msg.includes("issue")
+  )
+    return {
+      text: "You're already in the right place! Browse the **FAQ** tab or use **Ask for Help** to send a message to our team. 🙌",
+    };
+
+  if (
+    msg.includes("point") ||
+    msg.includes("reward") ||
+    msg.includes("badge") ||
+    msg.includes("leader")
+  )
+    return {
+      text: "Earn **+10 points** for doubts, **+20** for invites. Top scorers get the **Top Learner** badge! 🏆",
+    };
+
+  if (
+    msg.includes("invite") ||
+    msg.includes("refer") ||
+    msg.includes("friend") ||
+    msg.includes("share")
+  )
+    return {
+      text: "Share your referral link from the dashboard. Each friend who joins earns you **+20 points**! 🎁",
+    };
+
+  if (msg.includes("hello") || msg.includes("hi") || msg.includes("hey"))
+    return {
+      text: "Hey there! 👋 I'm AskSpark Bot. What can I help you with today?",
+    };
+
+  return {
+    text: "I'm here to help! Try asking about **doubts**, **lectures**, **profile**, or **tests**. 🤖",
+    showQuickButtons: true,
+  };
+}
+
+function getRelatedDoubts(userInput: string): string[] {
+  try {
+    const stored = localStorage.getItem("askspark_doubts");
+    if (!stored) return [];
+    const doubts: { text: string }[] = JSON.parse(stored);
+    const inputWords = userInput
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((w) => w.length > 3);
+    if (inputWords.length === 0) return [];
+    const matches = doubts
+      .filter((d) => {
+        const dText = d.text?.toLowerCase() || "";
+        return inputWords.some((w) => dText.includes(w));
+      })
+      .map((d) => d.text)
+      .slice(0, 3);
+    return matches;
+  } catch {
+    return [];
+  }
 }
 
 function BoldText({ text }: { text: string }) {
-  const parts = text.split("**");
-  const nodes: ReactNode[] = parts.map((part, i) =>
-    i % 2 === 1 ? (
-      <strong key={`b-${i}-${part.slice(0, 4)}`}>{part}</strong>
-    ) : (
-      <span key={`s-${i}-${part.slice(0, 4)}`}>{part}</span>
-    ),
+  const lines = text.split("\n");
+  return (
+    <>
+      {lines.map((line, li) => {
+        const parts = line.split("**");
+        return (
+          // biome-ignore lint/suspicious/noArrayIndexKey: positional text rendering
+          <span key={li}>
+            {parts.map((part, i) =>
+              i % 2 === 1 ? (
+                // biome-ignore lint/suspicious/noArrayIndexKey: positional bold segments
+                <strong key={i}>{part}</strong>
+              ) : (
+                // biome-ignore lint/suspicious/noArrayIndexKey: positional text segments
+                <span key={i}>{part}</span>
+              ),
+            )}
+            {li < lines.length - 1 && <br />}
+          </span>
+        );
+      })}
+    </>
   );
-  return <>{nodes}</>;
+}
+
+function TypingIndicator() {
+  return (
+    <div className="flex items-end gap-2 justify-start">
+      <div className="w-6 h-6 rounded-full gradient-primary flex items-center justify-center text-white text-xs flex-shrink-0">
+        🤖
+      </div>
+      <div className="px-4 py-3 rounded-2xl rounded-bl-sm bg-white/70 border border-white/60 flex items-center gap-1.5">
+        {[0, 1, 2].map((i) => (
+          <motion.div
+            key={i}
+            className="w-2 h-2 rounded-full bg-primary"
+            animate={{ opacity: [0.3, 1, 0.3] }}
+            transition={{
+              duration: 1,
+              repeat: Number.POSITIVE_INFINITY,
+              delay: i * 0.25,
+            }}
+          />
+        ))}
+        <span className="text-xs text-muted-foreground ml-1">
+          AskSpark Bot is typing...
+        </span>
+      </div>
+    </div>
+  );
 }
 
 function BotChatTab() {
+  const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
   const [input, setInput] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -110,22 +253,29 @@ function BotChatTab() {
     const userMsg: Message = { id: Date.now(), text, isUser: true, time: now };
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
+    setIsTyping(true);
+
     setTimeout(() => {
+      setIsTyping(false);
+      const { text: replyText, showQuickButtons } = getBotReply(text);
+      const related = getRelatedDoubts(text);
       const reply: Message = {
         id: Date.now() + 1,
-        text: getBotReply(text),
+        text: replyText,
         isUser: false,
         time: new Date().toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
         }),
+        ...(showQuickButtons ? { showQuickButtons: true } : {}),
+        ...(related.length > 0 ? { relatedDoubts: related } : {}),
       };
       setMessages((prev) => [...prev, reply]);
-    }, 300);
+    }, 1000);
   }
 
   return (
-    <div className="flex flex-col h-[480px] glass-card rounded-2xl border border-white/40 overflow-hidden warm-shadow">
+    <div className="flex flex-col h-[520px] glass-card rounded-2xl border border-white/40 overflow-hidden warm-shadow">
       {/* Bot header */}
       <div className="px-4 py-3 border-b border-border/50 flex items-center gap-3 bg-white/40">
         <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-white text-sm">
@@ -146,33 +296,99 @@ function BotChatTab() {
             key={msg.id}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`flex items-end gap-2 ${
-              msg.isUser ? "justify-end" : "justify-start"
+            className={`flex flex-col ${
+              msg.isUser ? "items-end" : "items-start"
             }`}
           >
-            {!msg.isUser && (
-              <div className="w-6 h-6 rounded-full gradient-primary flex items-center justify-center text-white text-xs flex-shrink-0">
-                🤖
-              </div>
-            )}
             <div
-              className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
-                msg.isUser
-                  ? "gradient-primary text-white rounded-br-sm"
-                  : "bg-white/70 text-foreground border border-white/60 rounded-bl-sm"
+              className={`flex items-end gap-2 ${
+                msg.isUser ? "justify-end" : "justify-start"
               }`}
             >
-              <BoldText text={msg.text} />
+              {!msg.isUser && (
+                <div className="w-6 h-6 rounded-full gradient-primary flex items-center justify-center text-white text-xs flex-shrink-0">
+                  🤖
+                </div>
+              )}
               <div
-                className={`text-xs mt-1 ${
-                  msg.isUser ? "text-white/70" : "text-muted-foreground"
+                className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
+                  msg.isUser
+                    ? "gradient-primary text-white rounded-br-sm"
+                    : "bg-white/70 text-foreground border border-white/60 rounded-bl-sm"
                 }`}
               >
-                {msg.time}
+                <BoldText text={msg.text} />
+                <div
+                  className={`text-xs mt-1 ${
+                    msg.isUser ? "text-white/70" : "text-muted-foreground"
+                  }`}
+                >
+                  {msg.time}
+                </div>
+                {/* Quick action buttons */}
+                {!msg.isUser && msg.showQuickButtons && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    <button
+                      type="button"
+                      onClick={() => navigate({ to: "/submit" })}
+                      className="px-3 py-1 rounded-full text-xs bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors"
+                      data-ocid="support.bot.ask_doubt_button"
+                    >
+                      📝 Ask Doubt
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => navigate({ to: "/profile" })}
+                      className="px-3 py-1 rounded-full text-xs bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors"
+                      data-ocid="support.bot.profile_button"
+                    >
+                      👤 Go to Profile
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => navigate({ to: "/learning" })}
+                      className="px-3 py-1 rounded-full text-xs bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors"
+                      data-ocid="support.bot.learning_button"
+                    >
+                      📚 Open Learning Hub
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
+            {/* Related doubts */}
+            {!msg.isUser &&
+              msg.relatedDoubts &&
+              msg.relatedDoubts.length > 0 && (
+                <div className="ml-8 mt-1.5 max-w-[80%] bg-muted/50 border border-border/40 rounded-xl px-3 py-2">
+                  <p className="text-xs font-medium text-muted-foreground mb-1">
+                    You may also find this helpful:
+                  </p>
+                  {msg.relatedDoubts.map((d, i) => (
+                    <p
+                      // biome-ignore lint/suspicious/noArrayIndexKey: related doubts shown in stable order
+                      key={`rd-${i}`}
+                      className="text-xs text-foreground/70 before:content-['•'] before:mr-1.5"
+                    >
+                      {d.length > 60 ? `${d.slice(0, 60)}...` : d}
+                    </p>
+                  ))}
+                </div>
+              )}
           </motion.div>
         ))}
+        {/* Typing indicator */}
+        <AnimatePresence>
+          {isTyping && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+            >
+              <TypingIndicator />
+            </motion.div>
+          )}
+        </AnimatePresence>
         <div ref={bottomRef} />
       </div>
 
@@ -190,7 +406,7 @@ function BotChatTab() {
           size="icon"
           className="rounded-full gradient-primary text-white border-0 flex-shrink-0"
           onClick={sendMessage}
-          disabled={!input.trim()}
+          disabled={!input.trim() || isTyping}
           data-ocid="support.bot.submit_button"
         >
           <Send className="w-4 h-4" />

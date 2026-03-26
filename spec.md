@@ -1,56 +1,46 @@
 # AskSpark
 
 ## Current State
-- Profile is stored in localStorage via `useLocalProfile.ts` (fields: userId, displayName, role, userType, userClass, userBranch)
-- `useSubmitProfile` mutation saves to localStorage, no auth required
-- `StudentDashboard` has a hardcoded "Arjun Sharma" name in the navbar; no profile image or interests shown
-- Navbar shows initials "AS" in a gradient box, no real avatar
-- No `/profile` route exists
-- No profile image upload capability
-- No interests field in profile
-- Teachers have the same profile shape as students
+The app has several pages with hardcoded/demo data:
+- **StudentDashboard**: `MOCK_DOUBTS` (4 fake doubts with fake teacher names like "Mr. Arjun Das"), `MOCK_NOTIFICATIONS` (3 fake notifications), `TEST_HISTORY` (4 weeks of fake test history), hardcoded `confidenceScore = 73`, `xp = 1240`, greeting "You're doing amazing, Arjun!"
+- **TeacherDashboard**: `TEACHER_MOCK_NOTIFICATIONS` (fake notifications referencing "Arjun S."), hardcoded doubt with `student: "Arjun S."`
+- **ChatRoom**: `ROOM_MESSAGES` (fake chat messages in group rooms with hardcoded names like "Arjun S.", "Priya M.", etc.), `INITIAL_CONVERSATIONS` (2 pre-filled personal chat conversations)
+- **LecturesPage**: Sample lectures marked with no "Sample" label
 
 ## Requested Changes (Diff)
 
 ### Add
-- `profileImageUrl` and `interests` fields to `LocalProfile` interface
-- `saveLocalProfile` / `useSubmitProfile` to persist `profileImageUrl` and `interests`
-- `/profile` route and `ProfilePage` component for viewing and editing profile
-- `CameraCapture` component (or reuse existing camera hook) that supports both mobile camera and desktop webcam — shows live preview, allows capture or file upload from device, returns a data URL
-- Profile image stored as base64 dataURL in localStorage (no Firebase Storage dependency since auth-free; Firebase Storage upload is optional/graceful-fail if firebase config is present)
-- Interests selector for students only: multi-select chips for Maths, Physics, Programming, Electronics, Biology
-- Circular avatar in all navbars (StudentDashboard, TeacherDashboard, LandingPage if profile exists) — clicking avatar navigates to `/profile`
-- "Edit Profile" quick-access button on StudentDashboard header and TeacherDashboard header
-- Interests displayed as small colored tags under student name in StudentDashboard navbar
-- Interests displayed on the `/profile` page
-- Profile name in dashboard reads from `loadLocalProfile()` not hardcoded
+- Empty state UI for doubts: "No doubts submitted yet — Start by asking your first doubt"
+- Empty state UI for test history: "No test history available"
+- Empty state UI for notifications: "No notifications yet"
+- Empty state for personal chat conversations: "No conversations yet"
+- "Sample" badge on all lecture cards (both live and recorded) in LecturesPage
+- Load real user name from `loadLocalProfile()` in dashboard greeting
+- Load real doubts from `localStorage` (key: `askspark_doubts`) for dashboard doubts list
+- Load real test history from `localStorage` (key: `askspark_test_history`) for test history section
+- Save test results to localStorage when WeeklyTest completes
+- Dynamically compute confidenceScore and xp from real doubts count and test scores
 
 ### Modify
-- `LocalProfile` interface: add `profileImageUrl?: string` and `interests?: string[]`
-- `useSubmitProfile` mutation: accept and persist `profileImageUrl` and `interests`
-- `StudentDashboard` navbar: replace hardcoded initials box with circular avatar (shows image if set, else initials); add interests tags under name; add "Edit Profile" button; read name from localStorage profile
-- `TeacherDashboard` navbar: replace initials box with circular avatar; add "Edit Profile" button; read name from localStorage
-- `App.tsx`: add `/profile` route
-- `OnboardingPage`: optionally allow skipping image/interests (they can be set later)
+- **StudentDashboard**: Remove `MOCK_DOUBTS`, `MOCK_NOTIFICATIONS`, `TEST_HISTORY` constants. Replace with localStorage-loaded real data. Greeting should use `localProfile?.name` (fallback to "there"). Confidence score = based on doubts count (e.g. min(doubts.length * 10, 100)). XP = doubts.length * 50.
+- **TeacherDashboard**: Remove `TEACHER_MOCK_NOTIFICATIONS` and hardcoded doubt with "Arjun S.". Replace notifications with empty array `[]` (real-time from Firebase would populate). Replace hardcoded doubts with doubts loaded from localStorage (all users' doubts, or empty state).
+- **ChatRoom**: Remove `ROOM_MESSAGES` (the pre-filled group chat messages). Group chats start empty. Remove `INITIAL_CONVERSATIONS` and initialize conversations as `[]` — personal chats start empty.
+- **WeeklyTest**: On test completion (results phase), save result `{week, score, topics, date}` to `askspark_test_history` in localStorage.
 
 ### Remove
-- Hardcoded "Arjun Sharma" and "AS" initials in StudentDashboard
+- `MOCK_DOUBTS` constant from StudentDashboard
+- `MOCK_NOTIFICATIONS` constant from StudentDashboard  
+- `TEST_HISTORY` constant from StudentDashboard
+- Hardcoded `confidenceScore = 73` and `xp = 1240`
+- "You're doing amazing, Arjun!" hardcoded greeting
+- `ROOM_MESSAGES` constant from ChatRoom (all pre-filled group chat messages)
+- `INITIAL_CONVERSATIONS` constant from ChatRoom
+- `TEACHER_MOCK_NOTIFICATIONS` from TeacherDashboard
+- Hardcoded doubt with `student: "Arjun S."` from TeacherDashboard
 
 ## Implementation Plan
-1. Update `LocalProfile` interface in `useLocalProfile.ts` — add `profileImageUrl` and `interests`
-2. Update `useSubmitProfile` in `useQueries.ts` — accept new fields
-3. Create `src/frontend/src/pages/ProfilePage.tsx`:
-   - Shows profile info (name, role, class/branch)
-   - Camera/upload section: button opens modal with two options — "Take Photo" (camera/webcam) and "Upload from Device" (file input); shows preview; on confirm saves base64 dataURL to profile
-   - Interests chips (students only): Maths, Physics, Programming, Electronics, Biology — multi-select; saved to profile
-   - "Save Changes" button
-4. Create `src/frontend/src/components/AvatarButton.tsx`:
-   - Circular avatar showing profile image or initials fallback
-   - Clickable, navigates to `/profile`
-5. Update `StudentDashboard.tsx`:
-   - Replace hardcoded name/initials with `loadLocalProfile()` data
-   - Replace gradient box with `AvatarButton`
-   - Show interests as small Badge chips under name in navbar
-   - Add "Edit Profile" icon/button in navbar
-6. Update `TeacherDashboard.tsx`: same avatar + edit profile button
-7. Update `App.tsx`: add `/profile` lazy route
+1. Update `StudentDashboard.tsx`: remove all mock constants, load doubts from `localStorage.getItem('askspark_doubts')` (parse JSON array), load test history from `localStorage.getItem('askspark_test_history')`, load notifications as `[]`, derive confidenceScore and xp from real data, fix greeting to use profile name
+2. Update `TeacherDashboard.tsx`: remove mock notifications and hardcoded student doubts, show empty states
+3. Update `ChatRoom.tsx`: remove `ROOM_MESSAGES` and `INITIAL_CONVERSATIONS`, start both group chat and personal conversations empty
+4. Update `WeeklyTest.tsx`: save results to localStorage on completion
+5. Update `LecturesPage.tsx`: add "Sample" badge to all lecture cards (live and recorded)
