@@ -204,7 +204,7 @@ export default function LandingPage() {
               Again
             </h1>
             <p className="text-lg text-muted-foreground max-w-lg leading-relaxed">
-              AskIQ is the confidence-building platform for students. Ask
+              AskSpark is the confidence-building platform for students. Ask
               anything anonymously, get multimedia answers from expert teachers,
               and watch your confidence soar.
             </p>
@@ -462,11 +462,17 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <Badge className="bg-muted text-muted-foreground border-border mb-4">
-              The Team
+              Team Spark
             </Badge>
             <h2 className="font-display text-4xl font-bold text-foreground">
               Built with ❤️ by students, for students
             </h2>
+            <p className="text-muted-foreground mt-3 text-sm">
+              We are{" "}
+              <span className="font-semibold text-primary">Team Spark</span> — a
+              group of passionate students on a mission to make education
+              fearless.
+            </p>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {TEAM.map((member) => (
@@ -502,7 +508,7 @@ export default function LandingPage() {
                 <GraduationCap className="w-4 h-4 text-white" />
               </div>
               <span className="font-display text-lg font-bold text-white">
-                AskIQ
+                AskSpark
               </span>
             </div>
             <p className="text-white/60 text-sm leading-relaxed">
@@ -532,8 +538,8 @@ export default function LandingPage() {
               Contact
             </div>
             <div className="space-y-2 text-white/50 text-sm">
-              <div>📧 hello@askiq.edu</div>
-              <div>🌐 askiq.caffeine.ai</div>
+              <div>📧 hello@askspark.app</div>
+              <div>🌐 askspark.caffeine.ai</div>
               <div className="flex items-center gap-1">
                 <Globe className="w-3.5 h-3.5" /> English · हिंदी · తెలుగు
               </div>
@@ -541,7 +547,7 @@ export default function LandingPage() {
           </div>
         </div>
         <div className="max-w-6xl mx-auto mt-12 pt-6 border-t border-white/10 text-center text-white/40 text-sm">
-          © {year}. Built with ❤️ using{" "}
+          © {year} AskSpark · Team Spark. Built with ❤️ using{" "}
           <a
             href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(typeof window !== "undefined" ? window.location.hostname : "")}`}
             target="_blank"

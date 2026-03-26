@@ -39,7 +39,7 @@ export default function Header() {
           </div>
           <span className="font-display text-xl font-bold">
             <span className="text-gradient">Ask</span>
-            <span className="text-foreground">IQ</span>
+            <span className="text-foreground">Spark</span>
           </span>
         </Link>
 
