@@ -18,7 +18,7 @@ import {
 import { useNavigate } from "@tanstack/react-router";
 import { BookOpen, GraduationCap, Loader2, School, Users } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AppRole } from "../backend";
 import {
@@ -26,7 +26,7 @@ import {
   SCHOOL_CLASSES,
   type UserType,
 } from "../data/branchData";
-import { useSubmitProfile } from "../hooks/useQueries";
+import { useSubmitProfile, useUserProfile } from "../hooks/useQueries";
 
 export default function OnboardingPage() {
   const navigate = useNavigate();
@@ -37,6 +37,20 @@ export default function OnboardingPage() {
   const [userClass, setUserClass] = useState("");
   const [userBranch, setUserBranch] = useState("");
   const submitProfile = useSubmitProfile();
+
+  const { data: existingProfile, isLoading: isProfileLoading } =
+    useUserProfile();
+
+  useEffect(() => {
+    if (isProfileLoading) return;
+    if (existingProfile?.role) {
+      if (existingProfile.role === AppRole.teacher) {
+        navigate({ to: "/dashboard/teacher" });
+      } else {
+        navigate({ to: "/dashboard/student" });
+      }
+    }
+  }, [existingProfile, isProfileLoading, navigate]);
 
   const canProceedStep1 = displayName.trim().length > 0 && role !== null;
   const isStudent = role === AppRole.student;
@@ -86,6 +100,26 @@ export default function OnboardingPage() {
   const canProceedStep2 =
     userType !== null &&
     (userType === "school" ? userClass !== "" : userBranch !== "");
+
+  if (isProfileLoading) {
+    return (
+      <div className="min-h-screen hero-gradient flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-4">
+            <GraduationCap className="w-9 h-9 text-primary-foreground" />
+          </div>
+          <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-3" />
+          <p className="text-muted-foreground text-sm">
+            Checking your profile…
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (existingProfile?.role) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen hero-gradient flex items-center justify-center px-4">

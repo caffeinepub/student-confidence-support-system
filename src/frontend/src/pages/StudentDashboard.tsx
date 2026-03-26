@@ -2,8 +2,15 @@ import VideoCallModal from "@/components/VideoCallModal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "@tanstack/react-router";
 import {
   Award,
@@ -215,6 +222,22 @@ function ScoreIndicator({ score }: { score: number }) {
 
 export default function StudentDashboard() {
   const navigate = useNavigate();
+
+  // Onboarding modal — shown once on first login
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    return !localStorage.getItem("askspark_onboarded");
+  });
+  function closeOnboarding() {
+    localStorage.setItem("askspark_onboarded", "1");
+    setShowOnboarding(false);
+  }
+
+  // Skeleton loading state
+  const [isLoading, setIsLoading] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setIsLoading(false), 600);
+    return () => clearTimeout(t);
+  }, []);
   const [expandedDoubt, setExpandedDoubt] = useState<number | null>(1);
   const [videoCallDoubt, setVideoCallDoubt] = useState<number | null>(null);
 
@@ -333,6 +356,42 @@ export default function StudentDashboard() {
       )}
     </div>
   );
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="h-16 bg-card border-b flex items-center px-6 gap-4">
+          <Skeleton className="w-10 h-10 rounded-xl" />
+          <Skeleton className="w-32 h-4" />
+          <div className="ml-auto flex gap-3">
+            <Skeleton className="w-20 h-8 rounded-lg" />
+            <Skeleton className="w-24 h-8 rounded-lg" />
+          </div>
+        </div>
+        <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
+          <Skeleton className="w-48 h-7" />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="rounded-2xl border bg-card p-6 space-y-3">
+                <Skeleton className="w-8 h-8 rounded-full" />
+                <Skeleton className="w-full h-4" />
+                <Skeleton className="w-3/4 h-3" />
+              </div>
+            ))}
+          </div>
+          <div className="space-y-3">
+            {[1, 2].map((i) => (
+              <div key={i} className="rounded-2xl border bg-card p-5 space-y-2">
+                <Skeleton className="w-24 h-5 rounded-full" />
+                <Skeleton className="w-3/4 h-4" />
+                <Skeleton className="w-1/2 h-3" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -1109,6 +1168,69 @@ export default function StudentDashboard() {
             );
           })()}
       </main>
+
+      {/* First-login onboarding modal */}
+      <Dialog
+        open={showOnboarding}
+        onOpenChange={(open) => {
+          if (!open) closeOnboarding();
+        }}
+      >
+        <DialogContent className="max-w-md" data-ocid="onboarding.dialog">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-center">
+              ✨ Welcome to AskSpark!
+            </DialogTitle>
+            <p className="text-center text-muted-foreground text-sm mt-1">
+              Your confidence-building journey starts here
+            </p>
+          </DialogHeader>
+          <div className="space-y-3 mt-2">
+            {[
+              {
+                icon: "📝",
+                step: "Submit Your Doubt",
+                desc: "Ask any question, anonymously if you want",
+              },
+              {
+                icon: "💬",
+                step: "Get an Answer",
+                desc: "Teachers respond with text, voice, and video",
+              },
+              {
+                icon: "⭐",
+                step: "Rate & Reply",
+                desc: "Give feedback and continue the conversation",
+              },
+              {
+                icon: "🏆",
+                step: "Earn Points",
+                desc: "Earn points and climb the leaderboard",
+              },
+            ].map((item) => (
+              <div
+                key={item.step}
+                className="flex items-start gap-3 p-3 rounded-xl bg-muted/40"
+              >
+                <span className="text-2xl">{item.icon}</span>
+                <div>
+                  <div className="font-semibold text-sm">{item.step}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {item.desc}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <Button
+            className="w-full mt-2 gradient-primary text-white font-semibold"
+            onClick={closeOnboarding}
+            data-ocid="onboarding.confirm_button"
+          >
+            Let's Go! 🚀
+          </Button>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

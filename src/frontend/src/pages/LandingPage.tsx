@@ -27,7 +27,9 @@ import {
   XCircle,
   Zap,
 } from "lucide-react";
+import { AppRole } from "../backend";
 import Header from "../components/Header";
+import { useUserProfile } from "../hooks/useQueries";
 
 function HeroCard() {
   return (
@@ -227,6 +229,7 @@ const FAQ_ITEMS = [
 export default function LandingPage() {
   const navigate = useNavigate();
   const year = new Date().getFullYear();
+  const { data: profile } = useUserProfile();
 
   return (
     <div className="min-h-screen bg-background">
@@ -269,6 +272,43 @@ export default function LandingPage() {
                 Join as Teacher
               </Button>
             </div>
+            {profile && (
+              <div
+                className="mt-2 flex items-center gap-3 p-3 rounded-xl bg-primary/10 border border-primary/20"
+                data-ocid="hero.panel"
+              >
+                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
+                  {profile.role === AppRole.teacher ? "T" : "S"}
+                </div>
+                <div className="flex-1 text-sm">
+                  <span className="font-semibold text-foreground">
+                    Welcome back!
+                  </span>
+                  <span className="text-muted-foreground ml-1">
+                    You're signed in as{" "}
+                    {profile.role === AppRole.teacher
+                      ? "a teacher"
+                      : "a student"}
+                    .
+                  </span>
+                </div>
+                <Button
+                  size="sm"
+                  className="rounded-full gradient-primary text-white border-0 font-semibold"
+                  onClick={() =>
+                    navigate({
+                      to:
+                        profile.role === AppRole.teacher
+                          ? "/dashboard/teacher"
+                          : "/dashboard/student",
+                    })
+                  }
+                  data-ocid="hero.primary_button"
+                >
+                  Go to Dashboard <ArrowRight className="ml-1.5 w-3.5 h-3.5" />
+                </Button>
+              </div>
+            )}
             <div className="flex items-center gap-6 text-sm text-muted-foreground pt-2">
               {["Free forever", "No credit card", "100% anonymous"].map((t) => (
                 <div key={t} className="flex items-center gap-1.5">

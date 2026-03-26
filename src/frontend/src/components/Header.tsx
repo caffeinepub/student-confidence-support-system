@@ -7,6 +7,7 @@ const NAV_LINKS = [
   { href: "/#features", label: "Features", isAnchor: true },
   { href: "/#how-it-works", label: "How It Works", isAnchor: true },
   { href: "/#team", label: "Team", isAnchor: true },
+  { href: "/blog", label: "Blog", isAnchor: false },
   { href: "/help", label: "Help Center", isAnchor: false },
   { href: "/chat", label: "Community", isAnchor: false },
 ];
