@@ -1,3 +1,9 @@
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -183,6 +189,41 @@ const TEAM = [
   },
 ];
 
+const FAQ_ITEMS = [
+  {
+    q: "What is AskSpark?",
+    a: "AskSpark is a free student doubt platform that lets school and college students ask questions anonymously and receive answers from expert teachers. It's designed to build student confidence and remove the fear of asking doubts in class.",
+  },
+  {
+    q: "Is AskSpark free to use?",
+    a: "Yes, AskSpark is completely free for students. You can submit unlimited doubts, access the student dashboard, join community study rooms, and take weekly tests — all at no cost.",
+  },
+  {
+    q: "How does the anonymous doubt feature work on AskSpark?",
+    a: "AskSpark lets you submit doubts with an anonymous toggle. When enabled, your name is hidden from teachers and other students. Only you can see your own identity. This makes AskSpark the safest anonymous doubt app for students.",
+  },
+  {
+    q: "Which students can use AskSpark?",
+    a: "AskSpark supports both school students (Class 6 to Class 12) and college students from branches like CSE, EEE, ECE, Mechanical, IT, Medical, CSD, ITI, and Polytechnic. AskSpark is built for all Indian students.",
+  },
+  {
+    q: "How can I ask doubts online using AskSpark?",
+    a: "To ask doubts online on AskSpark: (1) Visit the AskSpark website, (2) Click 'Submit a Doubt', (3) Type your question or upload a photo of your doubt, (4) Select your subject and branch/class, (5) Toggle anonymous if preferred, and (6) Submit. Your teacher will respond with text, voice, or video.",
+  },
+  {
+    q: "Does AskSpark support image uploads for doubts?",
+    a: "Yes! AskSpark has a built-in camera feature that lets you take a photo of your notebook or whiteboard directly from your phone and attach it to your doubt. You can also upload existing images from your gallery.",
+  },
+  {
+    q: "How is AskSpark different from other student learning systems?",
+    a: "AskSpark combines anonymous doubt submission, AI-powered doubt clustering, multimedia teacher answers (voice + video + images), a confidence score system with badges, weekly branch-based tests with fear zone analysis, and real-time community chat — all in one platform. No other student learning system offers this combination.",
+  },
+  {
+    q: "How do I sign in to AskSpark?",
+    a: "AskSpark supports Google Sign-In for quick, secure access. You can also submit doubts anonymously without signing in at all.",
+  },
+];
+
 export default function LandingPage() {
   const navigate = useNavigate();
   const year = new Date().getFullYear();
@@ -200,13 +241,14 @@ export default function LandingPage() {
               AI-Powered Education Platform
             </div>
             <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl font-bold leading-[1.08] tracking-tight text-foreground">
-              Never Fear to <span className="text-gradient">Ask Questions</span>{" "}
-              Again
+              AskSpark – Ask Any Question,{" "}
+              <span className="text-gradient">Build Real Confidence</span>
             </h1>
             <p className="text-lg text-muted-foreground max-w-lg leading-relaxed">
-              AskSpark is the confidence-building platform for students. Ask
-              anything anonymously, get multimedia answers from expert teachers,
-              and watch your confidence soar.
+              AskSpark is the student doubt platform where you can ask doubts
+              online anonymously and get real answers from expert teachers. The
+              anonymous doubt app built for school and college students who want
+              to learn fearlessly.
             </p>
             <div className="flex flex-wrap gap-4 pt-1">
               <Button
@@ -265,6 +307,70 @@ export default function LandingPage() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* What is AskSpark */}
+      <section id="what-is-askspark" className="py-20 px-4 sm:px-6 bg-muted/20">
+        <div className="max-w-4xl mx-auto text-center">
+          <Badge className="bg-primary/10 text-primary border-primary/20 mb-4">
+            About the Platform
+          </Badge>
+          <h2 className="font-display text-4xl font-bold text-foreground mb-6">
+            What is <span className="text-gradient">AskSpark</span>?
+          </h2>
+          <p className="text-lg text-muted-foreground leading-relaxed mb-6">
+            <strong>AskSpark</strong> is a free student doubt platform designed
+            to help school and college students overcome the fear of asking
+            questions. Using AskSpark, students can{" "}
+            <strong>ask doubts online</strong> anonymously — no name, no
+            embarrassment, just answers.
+          </p>
+          <p className="text-base text-muted-foreground leading-relaxed mb-8">
+            As the most accessible <strong>anonymous doubt app</strong> for
+            Indian students, AskSpark connects you with real teachers who
+            respond with text, voice, video, and images. Whether you're in Class
+            6 or a final-year engineering student, AskSpark is built for you.
+          </p>
+          <div className="grid sm:grid-cols-3 gap-6 mt-10 text-left">
+            {[
+              {
+                icon: Shield,
+                title: "Ask Anonymously",
+                desc: "Submit any doubt without revealing your name. AskSpark keeps your identity safe.",
+                color: "bg-blue-100 text-blue-600",
+              },
+              {
+                icon: GraduationCap,
+                title: "For All Students",
+                desc: "AskSpark supports Class 6–12 school students and college branches like CSE, EEE, ECE and more.",
+                color: "bg-green-100 text-green-600",
+              },
+              {
+                icon: Zap,
+                title: "Instant Answers",
+                desc: "AskSpark's AI matches your doubt instantly with similar questions and notifies teachers.",
+                color: "bg-amber-100 text-amber-600",
+              },
+            ].map((item) => (
+              <Card
+                key={item.title}
+                className="glass-card warm-shadow border-white/40"
+              >
+                <CardContent className="p-6">
+                  <div
+                    className={`w-10 h-10 rounded-xl ${item.color} flex items-center justify-center mb-3`}
+                  >
+                    <item.icon className="w-5 h-5" />
+                  </div>
+                  <h3 className="font-display font-bold text-foreground mb-2">
+                    {item.title}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">{item.desc}</p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </section>
@@ -343,12 +449,15 @@ export default function LandingPage() {
               Platform Features
             </Badge>
             <h2 className="font-display text-4xl font-bold text-foreground mb-4">
-              Everything you need to{" "}
-              <span className="text-gradient">learn fearlessly</span>
+              Everything AskSpark Offers —{" "}
+              <span className="text-gradient">
+                The Complete Student Doubt Platform
+              </span>
             </h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              A complete ecosystem built around student confidence, teacher
-              efficiency, and AI-powered learning.
+              AskSpark is more than an anonymous doubt app. It's a complete
+              ecosystem for student confidence, teacher efficiency, and
+              AI-powered learning.
             </p>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -454,6 +563,41 @@ export default function LandingPage() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section id="faq" className="py-24 px-4 sm:px-6 bg-muted/20">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-12">
+            <Badge className="bg-primary/10 text-primary border-primary/20 mb-4">
+              FAQ
+            </Badge>
+            <h2 className="font-display text-4xl font-bold text-foreground mb-4">
+              Frequently Asked Questions about{" "}
+              <span className="text-gradient">AskSpark</span>
+            </h2>
+            <p className="text-muted-foreground">
+              Everything you need to know about the AskSpark student doubt
+              platform.
+            </p>
+          </div>
+          <Accordion type="single" collapsible className="space-y-3">
+            {FAQ_ITEMS.map((item) => (
+              <AccordionItem
+                key={item.q}
+                value={item.q}
+                className="glass-card border-white/40 rounded-xl px-4 warm-shadow"
+              >
+                <AccordionTrigger className="font-display font-semibold text-foreground text-left hover:no-underline py-4">
+                  {item.q}
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground text-sm leading-relaxed pb-4">
+                  {item.a}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         </div>
       </section>
 

@@ -18,19 +18,18 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
-// ── Question Bank ──────────────────────────────────────────────────────────────
 const questionBank = [
   {
     id: 1,
     topic: "Math",
-    question: "What is the derivative of x²?",
-    options: ["x", "2x", "x²", "2"],
+    question: "What is the derivative of x\u00b2?",
+    options: ["x", "2x", "x\u00b2", "2"],
     answer: 1,
   },
   {
     id: 2,
     topic: "Math",
-    question: "What is the value of √144?",
+    question: "What is the value of \u221a144?",
     options: ["11", "12", "13", "14"],
     answer: 1,
   },
@@ -44,7 +43,7 @@ const questionBank = [
   {
     id: 4,
     topic: "Math",
-    question: "What is the area of a circle with radius 7? (π≈22/7)",
+    question: "What is the area of a circle with radius 7? (\u03c0\u224822/7)",
     options: ["44", "154", "88", "308"],
     answer: 1,
   },
@@ -52,7 +51,7 @@ const questionBank = [
     id: 5,
     topic: "Physics",
     question: "What is Newton's Second Law?",
-    options: ["F=mv", "F=ma", "E=mc²", "v=u+at"],
+    options: ["F=mv", "F=ma", "E=mc\u00b2", "v=u+at"],
     answer: 1,
   },
   {
@@ -66,7 +65,12 @@ const questionBank = [
     id: 7,
     topic: "Physics",
     question: "Speed of light in vacuum is approximately?",
-    options: ["3×10⁶ m/s", "3×10⁸ m/s", "3×10¹⁰ m/s", "3×10⁴ m/s"],
+    options: [
+      "3\u00d710\u2076 m/s",
+      "3\u00d710\u2078 m/s",
+      "3\u00d710\u00b9\u2070 m/s",
+      "3\u00d710\u2074 m/s",
+    ],
     answer: 1,
   },
   {
@@ -92,7 +96,7 @@ const questionBank = [
     id: 10,
     topic: "CS",
     question: "What is the time complexity of binary search?",
-    options: ["O(n)", "O(n²)", "O(log n)", "O(1)"],
+    options: ["O(n)", "O(n\u00b2)", "O(log n)", "O(1)"],
     answer: 2,
   },
   {
@@ -106,7 +110,7 @@ const questionBank = [
     id: 12,
     topic: "Chemistry",
     question: "What is the chemical formula for water?",
-    options: ["HO", "H₂O", "H₂O₂", "OH"],
+    options: ["HO", "H\u2082O", "H\u2082O\u2082", "OH"],
     answer: 1,
   },
   {
@@ -151,48 +155,47 @@ const questionBank = [
   },
 ];
 
-// ── Study Notes ────────────────────────────────────────────────────────────────
 const studyNotes: Record<string, string[]> = {
   Math: [
-    "Derivative rules: d/dx(xⁿ) = nxⁿ⁻¹",
-    "Area of circle = πr²; Circumference = 2πr",
-    "Quadratic formula: x = (−b ± √(b²−4ac)) / 2a",
+    "Derivative rules: d/dx(x\u207f) = nx\u207f\u207b\u00b9",
+    "Area of circle = \u03c0r\u00b2; Circumference = 2\u03c0r",
+    "Quadratic formula: x = (\u2212b \u00b1 \u221a(b\u00b2\u22124ac)) / 2a",
     "Always check units in word problems",
   ],
   Physics: [
     "Newton's Laws: 1st=Inertia, 2nd=F=ma, 3rd=Action-Reaction",
-    "v = u + at;  s = ut + ½at²;  v² = u² + 2as",
-    "Kinetic Energy = ½mv²;  Potential Energy = mgh",
-    "Speed of light = 3×10⁸ m/s",
+    "v = u + at;  s = ut + \u00bdат\u00b2;  v\u00b2 = u\u00b2 + 2as",
+    "Kinetic Energy = \u00bdmv\u00b2;  Potential Energy = mgh",
+    "Speed of light = 3\u00d710\u2078 m/s",
   ],
   CS: [
     "Stack = LIFO;  Queue = FIFO",
     "Binary Search = O(log n);  Linear Search = O(n)",
     "RAM = volatile;  ROM = non-volatile",
-    "Loop complexity: single loop = O(n), nested = O(n²)",
+    "Loop complexity: single loop = O(n), nested = O(n\u00b2)",
   ],
   Chemistry: [
     "Periodic table: H(1), He(2), Li(3), C(6), N(7), O(8), Na(11), Fe(26)",
     "Valency: H=1, O=2, N=3, C=4",
     "Acids: pH<7;  Bases: pH>7;  Neutral = 7",
-    "Avogadro's number = 6.022×10²³",
+    "Avogadro's number = 6.022\u00d710\u00b2\u00b3",
   ],
   Biology: [
     "Cell organelles: Mitochondria=energy, Ribosome=protein synthesis, Nucleus=control center",
-    "Photosynthesis: CO₂ + H₂O → Glucose + O₂ (light energy)",
+    "Photosynthesis: CO\u2082 + H\u2082O \u2192 Glucose + O\u2082 (light energy)",
     "DNA is double helix;  RNA is single stranded",
     "Blood types: A, B, AB, O",
   ],
   English: [
-    "Subject-Verb Agreement: singular subject → singular verb",
-    "Common irregular verbs: run→ran, go→went, see→saw, take→took",
+    "Subject-Verb Agreement: singular subject \u2192 singular verb",
+    "Common irregular verbs: run\u2192ran, go\u2192went, see\u2192saw, take\u2192took",
     "Tenses: Simple, Continuous, Perfect, Perfect Continuous",
     "Punctuation: comma for pauses, semicolon for related clauses",
   ],
 };
 
 const topicIcons: Record<string, React.ReactNode> = {
-  Math: <span className="text-lg">🔢</span>,
+  Math: <span className="text-lg">\ud83d\udd22</span>,
   Physics: <Zap className="w-4 h-4" />,
   CS: <Monitor className="w-4 h-4" />,
   Chemistry: <FlaskConical className="w-4 h-4" />,
@@ -200,10 +203,8 @@ const topicIcons: Record<string, React.ReactNode> = {
   English: <BookOpen className="w-4 h-4" />,
 };
 
-// Option labels for stable keys
 const OPTION_LABELS = ["A", "B", "C", "D"];
 
-// ── Weekly seed → deterministic 10-question selection ─────────────────────────
 function getWeeklyQuestions() {
   const seed = Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000));
   const shuffled = [...questionBank].sort((a, b) => {
@@ -228,7 +229,6 @@ function getWeeklyQuestions() {
   return selected.slice(0, 10);
 }
 
-// ── Score ring ────────────────────────────────────────────────────────────────
 function ScoreRing({ pct }: { pct: number }) {
   const r = 52;
   const circ = 2 * Math.PI * r;
@@ -306,10 +306,10 @@ export default function WeeklyTest() {
   const totalPct = Math.round((totalCorrect / questions.length) * 100);
   const scoreMsg =
     totalPct < 40
-      ? "Keep going! Every question teaches you something 💪"
+      ? "Keep going! Every question teaches you something \ud83d\udcaa"
       : totalPct <= 70
-        ? "Good effort! A few more reviews and you'll nail it 🌟"
-        : "Excellent! You're on top of your topics 🏆";
+        ? "Good effort! A few more reviews and you'll nail it \ud83c\udf1f"
+        : "Excellent! You're on top of your topics \ud83c\udfc6";
 
   const fearTopics = topicStats.filter((t) => t.status === "fear");
 
@@ -319,18 +319,15 @@ export default function WeeklyTest() {
   }
 
   function handleNext() {
-    if (currentQ < questions.length - 1) {
-      setCurrentQ((c) => c + 1);
-    } else {
-      setPhase("results");
-    }
+    if (currentQ < questions.length - 1) setCurrentQ((c) => c + 1);
+    else setPhase("results");
   }
 
   function toggleNote(topic: string) {
     setExpandedNotes((prev) => ({ ...prev, [topic]: !prev[topic] }));
   }
 
-  // ── Intro ──────────────────────────────────────────────────────────────────
+  // Intro
   if (phase === "intro") {
     return (
       <div className="min-h-screen bg-background">
@@ -352,7 +349,7 @@ export default function WeeklyTest() {
         </header>
         <main className="max-w-3xl mx-auto px-4 sm:px-6 py-12">
           <div className="glass-card rounded-3xl p-8 sm:p-12 warm-shadow text-center space-y-6">
-            <div className="text-6xl">📝</div>
+            <div className="text-6xl">\ud83d\udcdd</div>
             <div>
               <Badge className="bg-primary/10 text-primary border-primary/20 mb-3">
                 Week #{weekNumber}
@@ -389,7 +386,7 @@ export default function WeeklyTest() {
               ))}
             </div>
             <p className="text-xs text-muted-foreground">
-              10 questions · ~5 minutes · Get your fear zone report
+              10 questions \u00b7 ~5 minutes \u00b7 Get your fear zone report
             </p>
             <Button
               size="lg"
@@ -397,7 +394,7 @@ export default function WeeklyTest() {
               onClick={() => setPhase("test")}
               data-ocid="weekly_test.primary_button"
             >
-              Start Test →
+              Start Test \u2192
             </Button>
           </div>
         </main>
@@ -405,13 +402,12 @@ export default function WeeklyTest() {
     );
   }
 
-  // ── Test ───────────────────────────────────────────────────────────────────
+  // Test
   if (phase === "test") {
     const q = questions[currentQ];
     const selected = answers[q.id];
     const progress = ((currentQ + 1) / questions.length) * 100;
     const isLast = currentQ === questions.length - 1;
-
     return (
       <div className="min-h-screen bg-background">
         <header className="glass-nav sticky top-0 z-40 px-4 sm:px-6 py-3">
@@ -445,11 +441,7 @@ export default function WeeklyTest() {
                 <button
                   key={`q${q.id}-opt-${OPTION_LABELS[i]}`}
                   type="button"
-                  className={`w-full text-left px-5 py-4 rounded-2xl border-2 transition-all duration-200 font-medium text-sm ${
-                    selected === i
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-border bg-white/60 hover:border-primary/40 text-foreground"
-                  }`}
+                  className={`w-full text-left px-5 py-4 rounded-2xl border-2 transition-all duration-200 font-medium text-sm ${selected === i ? "border-primary bg-primary/10 text-primary" : "border-border bg-white/60 hover:border-primary/40 text-foreground"}`}
                   onClick={() => selectAnswer(i)}
                   data-ocid={`weekly_test.item.${i + 1}`}
                 >
@@ -477,7 +469,7 @@ export default function WeeklyTest() {
     );
   }
 
-  // ── Results ──────────────────────────────────────────────────────────────────
+  // Results
   return (
     <div className="min-h-screen bg-background">
       <header className="glass-nav sticky top-0 z-40 px-4 sm:px-6 py-3">
@@ -498,7 +490,7 @@ export default function WeeklyTest() {
       </header>
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-10 space-y-8">
-        {/* 1. Score Summary */}
+        {/* Score Summary */}
         <div
           className="glass-card rounded-3xl p-8 warm-shadow text-center space-y-4"
           data-ocid="weekly_test.card"
@@ -514,24 +506,33 @@ export default function WeeklyTest() {
           <p className="text-muted-foreground max-w-sm mx-auto text-sm">
             {scoreMsg}
           </p>
-          <Button
-            variant="outline"
-            className="rounded-full"
-            onClick={() => {
-              setPhase("intro");
-              setCurrentQ(0);
-              setAnswers({});
-            }}
-            data-ocid="weekly_test.secondary_button"
-          >
-            Retake Test
-          </Button>
+          <div className="flex flex-wrap justify-center gap-3">
+            <Button
+              variant="outline"
+              className="rounded-full"
+              onClick={() => {
+                setPhase("intro");
+                setCurrentQ(0);
+                setAnswers({});
+              }}
+              data-ocid="weekly_test.secondary_button"
+            >
+              Retake Test
+            </Button>
+            <Button
+              className="rounded-full gradient-primary text-white border-0 shadow-primary"
+              onClick={() => navigate({ to: "/dashboard/student" })}
+              data-ocid="weekly_test.primary_button"
+            >
+              \ud83d\udcca View Test History
+            </Button>
+          </div>
         </div>
 
-        {/* 2. Fear Zone Report */}
+        {/* Fear Zone Report */}
         <div>
           <h2 className="font-display text-xl font-bold text-foreground mb-4">
-            📊 Topic Report — Fear Zone Analysis
+            \ud83d\udcca Topic Report \u2014 Fear Zone Analysis
           </h2>
           <div className="space-y-3">
             {topicStats.map((ts, i) => {
@@ -543,10 +544,10 @@ export default function WeeklyTest() {
                     : "bg-green-500";
               const label =
                 ts.status === "fear"
-                  ? "Fear Zone 🔴"
+                  ? "Fear Zone \ud83d\udd34"
                   : ts.status === "needs"
-                    ? "Needs Work 🟡"
-                    : "Strong 🟢";
+                    ? "Needs Work \ud83d\udfe1"
+                    : "Strong \ud83d\udfe2";
               const labelClass =
                 ts.status === "fear"
                   ? "bg-red-100 text-red-700"
@@ -592,10 +593,10 @@ export default function WeeklyTest() {
           </div>
         </div>
 
-        {/* 3. Study Material */}
+        {/* Study Material */}
         <div>
           <h2 className="font-display text-xl font-bold text-foreground mb-2">
-            📚 Your Personalized Study Plan
+            \ud83d\udcda Your Personalized Study Plan
           </h2>
           {fearTopics.length === 0 ? (
             <div
@@ -607,7 +608,8 @@ export default function WeeklyTest() {
                 No fear zones detected!
               </h3>
               <p className="text-muted-foreground mt-2 text-sm">
-                You scored above 50% on all topics. Keep up the amazing work! 🎉
+                You scored above 50% on all topics. Keep up the amazing work!
+                \ud83c\udf89
               </p>
             </div>
           ) : (
@@ -629,7 +631,7 @@ export default function WeeklyTest() {
                         <span className="w-7 h-7 rounded-full bg-red-100 flex items-center justify-center text-red-600">
                           {topicIcons[ts.topic]}
                         </span>
-                        {ts.topic} — Quick Revision Notes
+                        {ts.topic} \u2014 Quick Revision Notes
                         <Badge className="bg-red-100 text-red-700 border-0 text-xs">
                           Fear Zone
                         </Badge>
@@ -649,7 +651,7 @@ export default function WeeklyTest() {
                               className="flex items-start gap-2 text-sm text-foreground/80"
                             >
                               <span className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">
-                                •
+                                \u2022
                               </span>
                               {note}
                             </li>
@@ -665,7 +667,7 @@ export default function WeeklyTest() {
         </div>
 
         <div className="text-center text-xs text-muted-foreground py-4">
-          © {new Date().getFullYear()}. Built with ❤️ using{" "}
+          \u00a9 {new Date().getFullYear()}. Built with \u2764\ufe0f using{" "}
           <a
             href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(typeof window !== "undefined" ? window.location.hostname : "")}`}
             target="_blank"

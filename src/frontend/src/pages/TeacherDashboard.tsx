@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useNavigate } from "@tanstack/react-router";
 import {
+  Bell,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
@@ -17,11 +18,12 @@ import {
   Mic,
   MicOff,
   Send,
+  Star,
   TrendingUp,
   Video,
   X,
 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 type Priority = "High" | "Medium" | "Low";
@@ -561,9 +563,50 @@ function DoubtCard({
   );
 }
 
+const TEACHER_MOCK_NOTIFICATIONS = [
+  {
+    id: 1,
+    icon: "❓",
+    type: "doubt",
+    text: "Arjun S. submitted a new doubt: 'Why does sin(x)/x → 1?'",
+    time: "5 min ago",
+    read: false,
+  },
+  {
+    id: 2,
+    icon: "💬",
+    type: "reply",
+    text: "Priya M. replied to your answer on 'Ionic vs Covalent Bonds'",
+    time: "1h ago",
+    read: false,
+  },
+  {
+    id: 3,
+    icon: "⭐",
+    type: "rating",
+    text: "Rahul K. rated your answer 4/5 stars on 'Stack vs Queue'",
+    time: "2h ago",
+    read: false,
+  },
+  {
+    id: 4,
+    icon: "✉️",
+    type: "message",
+    text: "New personal message from Sneha R.: 'Thank you for the explanation!'",
+    time: "3h ago",
+    read: true,
+  },
+];
+
 export default function TeacherDashboard() {
   const navigate = useNavigate();
   const [doubts, setDoubts] = useState<Doubt[]>(INITIAL_DOUBTS);
+  const [teacherNotifs, setTeacherNotifs] = useState(
+    TEACHER_MOCK_NOTIFICATIONS,
+  );
+  const [teacherNotifOpen, setTeacherNotifOpen] = useState(false);
+  const teacherNotifRef = useRef<HTMLDivElement>(null);
+  const teacherUnreadCount = teacherNotifs.filter((n) => !n.read).length;
   const [expanded, setExpanded] = useState<number | null>(1);
 
   const pending = doubts.filter((d) => d.status === "pending");
@@ -581,6 +624,29 @@ export default function TeacherDashboard() {
     );
     setExpanded(null);
   };
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (
+        teacherNotifRef.current &&
+        !teacherNotifRef.current.contains(e.target as Node)
+      ) {
+        setTeacherNotifOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  function markTeacherNotifRead(id: number) {
+    setTeacherNotifs((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
+    );
+  }
+
+  function markAllTeacherNotifsRead() {
+    setTeacherNotifs((prev) => prev.map((n) => ({ ...n, read: true })));
+  }
 
   const STATS = [
     {
@@ -630,15 +696,86 @@ export default function TeacherDashboard() {
               </Badge>
             </div>
           </div>
-          <Button
-            size="sm"
-            variant="outline"
-            className="rounded-full"
-            onClick={() => navigate({ to: "/" })}
-            data-ocid="teacher.secondary_button"
-          >
-            <LogOut className="w-4 h-4 mr-1" /> Exit
-          </Button>
+          <div className="flex items-center gap-2">
+            {/* Notification Bell */}
+            <div className="relative" ref={teacherNotifRef}>
+              <button
+                type="button"
+                className="relative w-9 h-9 rounded-full glass-card flex items-center justify-center hover:bg-muted/60 transition-colors"
+                onClick={() => setTeacherNotifOpen((o) => !o)}
+                aria-label="Teacher Notifications"
+                data-ocid="teacher.open_modal_button"
+              >
+                <Bell className="w-4 h-4 text-foreground" />
+                {teacherUnreadCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-0.5">
+                    {teacherUnreadCount}
+                  </span>
+                )}
+              </button>
+              {teacherNotifOpen && (
+                <div
+                  className="absolute top-full mt-2 right-0 w-80 glass-card rounded-2xl shadow-xl border-white/40 overflow-hidden z-50"
+                  data-ocid="teacher.popover"
+                >
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
+                    <span className="font-display font-bold text-sm text-foreground">
+                      Notifications
+                    </span>
+                    {teacherUnreadCount > 0 && (
+                      <button
+                        type="button"
+                        className="text-xs text-primary hover:underline"
+                        onClick={markAllTeacherNotifsRead}
+                        data-ocid="teacher.secondary_button"
+                      >
+                        Mark all read
+                      </button>
+                    )}
+                  </div>
+                  <div className="max-h-72 overflow-y-auto">
+                    {teacherNotifs.map((n) => (
+                      <button
+                        key={n.id}
+                        type="button"
+                        className={`w-full text-left px-4 py-3 flex items-start gap-3 hover:bg-muted/40 transition-colors border-b border-border/30 last:border-0 ${n.read ? "opacity-60" : ""}`}
+                        onClick={() => markTeacherNotifRead(n.id)}
+                      >
+                        <span className="text-lg flex-shrink-0 mt-0.5">
+                          {n.icon}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm text-foreground leading-snug">
+                            {n.text}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            {n.time}
+                          </div>
+                        </div>
+                        {!n.read && (
+                          <span className="w-2 h-2 rounded-full bg-primary flex-shrink-0 mt-1.5" />
+                        )}
+                      </button>
+                    ))}
+                    {teacherNotifs.every((n) => n.read) && (
+                      <div className="p-4 text-center text-sm text-muted-foreground">
+                        All caught up! 🎉
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="rounded-full"
+              onClick={() => navigate({ to: "/" })}
+              data-ocid="teacher.link"
+            >
+              <LogOut className="w-4 h-4 mr-1" /> Exit
+            </Button>
+          </div>
         </div>
       </header>
 
