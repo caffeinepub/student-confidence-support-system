@@ -1,3 +1,4 @@
+import AvatarButton from "@/components/AvatarButton";
 import VideoCallModal from "@/components/VideoCallModal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,11 +30,13 @@ import {
   Send,
   Star,
   TrendingUp,
+  User,
   Video,
   X,
   Zap,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { loadLocalProfile } from "../hooks/useLocalProfile";
 
 const MOCK_DOUBTS = [
   {
@@ -228,6 +231,7 @@ function ScoreIndicator({ score }: { score: number }) {
 
 export default function StudentDashboard() {
   const navigate = useNavigate();
+  const localProfile = loadLocalProfile();
 
   // Onboarding modal — shown once on first login
   const [showOnboarding, setShowOnboarding] = useState(() => {
@@ -418,16 +422,29 @@ export default function StudentDashboard() {
       <header className="glass-nav sticky top-0 z-40 px-4 sm:px-6 py-3">
         <div className="max-w-5xl mx-auto flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center text-white font-bold text-sm">
-              AS
-            </div>
+            <AvatarButton
+              imageUrl={localProfile?.profileImageUrl}
+              name={localProfile?.displayName ?? "Student"}
+            />
             <div>
               <div className="font-display font-bold text-foreground text-sm">
-                Arjun Sharma
+                {localProfile?.displayName ?? "Student"}
               </div>
               <Badge className="bg-primary/10 text-primary border-primary/20 text-xs">
                 Student
               </Badge>
+              {localProfile?.interests && localProfile.interests.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {localProfile.interests.slice(0, 3).map((interest) => (
+                    <Badge
+                      key={interest}
+                      className="bg-muted text-muted-foreground border border-border text-[10px] px-1.5 py-0"
+                    >
+                      {interest}
+                    </Badge>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 

@@ -1,3 +1,4 @@
+import AvatarButton from "@/components/AvatarButton";
 import VideoCallModal from "@/components/VideoCallModal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { loadLocalProfile } from "../hooks/useLocalProfile";
 
 type Priority = "High" | "Medium" | "Low";
 type AnswerMode = "text" | "voice" | "video" | "image";
@@ -604,6 +606,7 @@ const TEACHER_MOCK_NOTIFICATIONS = [
 
 export default function TeacherDashboard() {
   const navigate = useNavigate();
+  const localProfile = loadLocalProfile();
   const [doubts, setDoubts] = useState<Doubt[]>(INITIAL_DOUBTS);
   const [teacherNotifs, setTeacherNotifs] = useState(
     TEACHER_MOCK_NOTIFICATIONS,
@@ -700,12 +703,13 @@ export default function TeacherDashboard() {
       <header className="glass-nav sticky top-0 z-40 px-4 sm:px-6 py-3">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-green-500 flex items-center justify-center text-white font-bold text-sm">
-              MR
-            </div>
+            <AvatarButton
+              imageUrl={localProfile?.profileImageUrl}
+              name={localProfile?.displayName ?? "Teacher"}
+            />
             <div>
               <div className="font-display font-bold text-foreground text-sm">
-                Prof. Meena Rao
+                {localProfile?.displayName ?? "Teacher"}
               </div>
               <Badge className="bg-green-100 text-green-700 border-green-200 text-xs">
                 Teacher

@@ -20,6 +20,7 @@ const ChatRoom = lazy(() => import("./pages/ChatRoom"));
 const WeeklyTest = lazy(() => import("./pages/WeeklyTest"));
 const BlogList = lazy(() => import("./pages/BlogList"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
+const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 
 const rootRoute = createRootRoute({
   component: () => (
@@ -80,6 +81,11 @@ const blogPostRoute = createRoute({
   path: "/blog/$slug",
   component: BlogPost,
 });
+const profileRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/profile",
+  component: ProfilePage,
+});
 
 // Short URL aliases
 const blogHesitateRoute = createRoute({
@@ -128,6 +134,7 @@ const routeTree = rootRoute.addChildren([
   blogHesitateRoute,
   blogAnonRoute,
   blogPostRoute,
+  profileRoute,
   catchAllRoute,
 ]);
 

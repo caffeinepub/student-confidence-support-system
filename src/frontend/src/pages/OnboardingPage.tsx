@@ -26,7 +26,6 @@ import {
   SCHOOL_CLASSES,
   type UserType,
 } from "../data/branchData";
-import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import { useSubmitProfile, useUserProfile } from "../hooks/useQueries";
 
 export default function OnboardingPage() {
@@ -38,11 +37,6 @@ export default function OnboardingPage() {
   const [userClass, setUserClass] = useState("");
   const [userBranch, setUserBranch] = useState("");
   const submitProfile = useSubmitProfile();
-  const {
-    identity,
-    login,
-    isInitializing: isAuthInitializing,
-  } = useInternetIdentity();
 
   const { data: existingProfile, isLoading: isProfileLoading } =
     useUserProfile();
@@ -78,19 +72,10 @@ export default function OnboardingPage() {
       await submitProfile.mutateAsync({
         displayName: displayName.trim(),
         role: role as AppRole,
+        userType: userType ?? undefined,
+        userClass: userClass || undefined,
+        userBranch: userBranch || undefined,
       });
-
-      // Persist student profile choice
-      if (isStudent && userType) {
-        localStorage.setItem("userType", userType);
-        if (userType === "school" && userClass) {
-          localStorage.setItem("userClass", userClass);
-          localStorage.removeItem("userBranch");
-        } else if (userType === "college" && userBranch) {
-          localStorage.setItem("userBranch", userBranch);
-          localStorage.removeItem("userClass");
-        }
-      }
 
       toast.success("Profile created! Welcome aboard 🎉");
       if (role === AppRole.teacher) {
@@ -108,37 +93,6 @@ export default function OnboardingPage() {
   const canProceedStep2 =
     userType !== null &&
     (userType === "school" ? userClass !== "" : userBranch !== "");
-
-  // Show login screen if user is not authenticated
-  if (!isAuthInitializing && !identity) {
-    return (
-      <div className="min-h-screen hero-gradient flex items-center justify-center px-4">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="w-full max-w-md text-center"
-        >
-          <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-4">
-            <GraduationCap className="w-9 h-9 text-primary-foreground" />
-          </div>
-          <h1 className="text-2xl font-bold text-foreground mb-2">
-            Sign in to AskSpark
-          </h1>
-          <p className="text-muted-foreground mb-6">
-            You need to sign in with Internet Identity before creating your
-            profile.
-          </p>
-          <Button
-            className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-full font-semibold"
-            onClick={login}
-          >
-            Sign in with Internet Identity
-          </Button>
-        </motion.div>
-      </div>
-    );
-  }
 
   if (isProfileLoading) {
     return (

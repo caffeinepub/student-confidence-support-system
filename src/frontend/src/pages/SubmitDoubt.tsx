@@ -35,6 +35,7 @@ import {
   SCHOOL_SUBJECTS,
   readUserProfile,
 } from "../data/branchData";
+import { useSubmitDoubt } from "../hooks/useQueries";
 
 const STEPS = [
   { n: 1, title: "Describe Your Doubt", icon: "📝" },
@@ -45,6 +46,7 @@ const STEPS = [
 interface ImagePreview {
   url: string;
   name: string;
+  file: File;
 }
 
 interface FormState {
@@ -58,6 +60,7 @@ interface FormState {
 
 export default function SubmitDoubt() {
   const navigate = useNavigate();
+  const submitDoubtMutation = useSubmitDoubt();
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
 
@@ -118,7 +121,7 @@ export default function SubmitDoubt() {
     const newImgs = Array.from(files)
       .filter((f) => f.type.startsWith("image/"))
       .slice(0, 4 - form.images.length)
-      .map((f) => ({ url: URL.createObjectURL(f), name: f.name }));
+      .map((f) => ({ url: URL.createObjectURL(f), name: f.name, file: f }));
     setForm((prev) => ({ ...prev, images: [...prev.images, ...newImgs] }));
   };
 
@@ -135,12 +138,34 @@ export default function SubmitDoubt() {
 
   const handleSubmit = async () => {
     setSubmitting(true);
-    await new Promise((r) => setTimeout(r, 1800));
-    setSubmitting(false);
-    toast.success(
-      "Doubt submitted successfully! 🎉 A teacher will answer soon.",
-    );
-    navigate({ to: "/dashboard/student" });
+    try {
+      const fullText = `[${form.branch} | ${form.subject}]\n\n${form.title}\n\n${form.description}`;
+
+      await submitDoubtMutation.mutateAsync({
+        text: fullText,
+        isAnonymous: form.anonymous,
+      });
+
+      toast.success(
+        "Doubt submitted successfully! 🎉 A teacher will answer soon.",
+      );
+      setForm({
+        branch: profile.userBranch ?? profile.userClass ?? "",
+        subject: "",
+        title: "",
+        description: "",
+        anonymous: false,
+        images: [],
+      });
+      setStep(1);
+    } catch (err) {
+      console.error("Doubt submission failed:", err);
+      toast.error(
+        "Submission failed. Please check your connection and try again.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // Label for branch/class selector
@@ -500,8 +525,8 @@ export default function SubmitDoubt() {
                 </Card>
                 <div className="p-4 rounded-xl bg-blue-50 border border-blue-100 text-sm text-blue-700">
                   <strong>What happens next?</strong> Your doubt will be
-                  submitted, AI will cluster it with similar questions, and a
-                  teacher will respond — usually within 24 hours.
+                  submitted and a teacher will respond — usually within 24
+                  hours.
                 </div>
                 <Button
                   className="w-full rounded-xl gradient-primary text-white font-semibold border-0 shadow-primary hover:opacity-90"
