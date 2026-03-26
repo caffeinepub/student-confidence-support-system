@@ -1,46 +1,48 @@
-# AskSpark
+# AskSpark — Smart Features Upgrade
 
 ## Current State
-The app has several pages with hardcoded/demo data:
-- **StudentDashboard**: `MOCK_DOUBTS` (4 fake doubts with fake teacher names like "Mr. Arjun Das"), `MOCK_NOTIFICATIONS` (3 fake notifications), `TEST_HISTORY` (4 weeks of fake test history), hardcoded `confidenceScore = 73`, `xp = 1240`, greeting "You're doing amazing, Arjun!"
-- **TeacherDashboard**: `TEACHER_MOCK_NOTIFICATIONS` (fake notifications referencing "Arjun S."), hardcoded doubt with `student: "Arjun S."`
-- **ChatRoom**: `ROOM_MESSAGES` (fake chat messages in group rooms with hardcoded names like "Arjun S.", "Priya M.", etc.), `INITIAL_CONVERSATIONS` (2 pre-filled personal chat conversations)
-- **LecturesPage**: Sample lectures marked with no "Sample" label
+AskSpark is a full EdTech platform with:
+- Student & Teacher dashboards (localStorage-based, no auth)
+- Doubt submission, chat, group rooms, leaderboard, points
+- Learning Hub: Lectures, DPP Practice, AI Bot support
+- WebRTC calls (teacher-initiated), live class broadcast, in-class chat/doubt
+- Blog, SEO, notifications bell (existing)
+- Gamification (points, badges, leaderboard) already implemented
 
 ## Requested Changes (Diff)
 
 ### Add
-- Empty state UI for doubts: "No doubts submitted yet — Start by asking your first doubt"
-- Empty state UI for test history: "No test history available"
-- Empty state UI for notifications: "No notifications yet"
-- Empty state for personal chat conversations: "No conversations yet"
-- "Sample" badge on all lecture cards (both live and recorded) in LecturesPage
-- Load real user name from `loadLocalProfile()` in dashboard greeting
-- Load real doubts from `localStorage` (key: `askspark_doubts`) for dashboard doubts list
-- Load real test history from `localStorage` (key: `askspark_test_history`) for test history section
-- Save test results to localStorage when WeeklyTest completes
-- Dynamically compute confidenceScore and xp from real doubts count and test scores
+- **PDF Notes download** on LiveClassPage: after class ends, show a "Download Notes PDF" button that generates a jsPDF document with lecture title, chat messages (as topics covered), and key points
+- **Notification system** with bell icon in Header: show count badge, dropdown with notifications for students (incoming call, class started, doubt answered) and teachers (new doubt in class, call request). Store in localStorage. Clicking a notification navigates to the relevant page and marks it read.
+- **Answer Rating** on SubmitDoubt / doubts list: after a doubt is shown as "answered", student can rate 1–5 stars. Save rating in localStorage keyed by doubtId. Show average teacher rating on TeacherDashboard.
+- **Progress Analytics card** on StudentDashboard: "Your Progress" section showing doubts asked (count from localStorage), classes attended (count from localStorage callHistory), and a simple progress bar.
+- **Ad placeholder banners** on StudentDashboard and LearningHub: styled card saying "📢 Your Ad Here — Sponsor AskSpark" with a subtle border. Non-intrusive, small, at bottom of page.
+- **Sponsorship footer section**: "Powered by [Sponsor Name]" line in the app footer on LandingPage.
+- **Admin Panel** at `/admin`: password-protected (hardcoded: "spark2024"). Shows: total users count (from localStorage), doubts list, basic activity stats. Simple table UI.
+- **Premium badge** on StudentDashboard: demo "Go Premium" button that shows a modal explaining premium features (Priority answers, faster response, advanced analytics). No payment — just a UI indicator for demo.
 
 ### Modify
-- **StudentDashboard**: Remove `MOCK_DOUBTS`, `MOCK_NOTIFICATIONS`, `TEST_HISTORY` constants. Replace with localStorage-loaded real data. Greeting should use `localProfile?.name` (fallback to "there"). Confidence score = based on doubts count (e.g. min(doubts.length * 10, 100)). XP = doubts.length * 50.
-- **TeacherDashboard**: Remove `TEACHER_MOCK_NOTIFICATIONS` and hardcoded doubt with "Arjun S.". Replace notifications with empty array `[]` (real-time from Firebase would populate). Replace hardcoded doubts with doubts loaded from localStorage (all users' doubts, or empty state).
-- **ChatRoom**: Remove `ROOM_MESSAGES` (the pre-filled group chat messages). Group chats start empty. Remove `INITIAL_CONVERSATIONS` and initialize conversations as `[]` — personal chats start empty.
-- **WeeklyTest**: On test completion (results phase), save result `{week, score, topics, date}` to `askspark_test_history` in localStorage.
+- **LiveClassPage**: add Download Notes PDF button that appears after class ends (teacher side)
+- **Header**: add notification bell with unread count badge, clicking opens dropdown
+- **StudentDashboard**: add Progress Analytics card and ad banner
+- **LearningHub**: add ad banner at bottom
+- **TeacherDashboard**: add average rating display and notification integration
+- **LandingPage footer**: add sponsorship line
+- **main.tsx router**: add `/admin` route
 
 ### Remove
-- `MOCK_DOUBTS` constant from StudentDashboard
-- `MOCK_NOTIFICATIONS` constant from StudentDashboard  
-- `TEST_HISTORY` constant from StudentDashboard
-- Hardcoded `confidenceScore = 73` and `xp = 1240`
-- "You're doing amazing, Arjun!" hardcoded greeting
-- `ROOM_MESSAGES` constant from ChatRoom (all pre-filled group chat messages)
-- `INITIAL_CONVERSATIONS` constant from ChatRoom
-- `TEACHER_MOCK_NOTIFICATIONS` from TeacherDashboard
-- Hardcoded doubt with `student: "Arjun S."` from TeacherDashboard
+- Nothing removed
 
 ## Implementation Plan
-1. Update `StudentDashboard.tsx`: remove all mock constants, load doubts from `localStorage.getItem('askspark_doubts')` (parse JSON array), load test history from `localStorage.getItem('askspark_test_history')`, load notifications as `[]`, derive confidenceScore and xp from real data, fix greeting to use profile name
-2. Update `TeacherDashboard.tsx`: remove mock notifications and hardcoded student doubts, show empty states
-3. Update `ChatRoom.tsx`: remove `ROOM_MESSAGES` and `INITIAL_CONVERSATIONS`, start both group chat and personal conversations empty
-4. Update `WeeklyTest.tsx`: save results to localStorage on completion
-5. Update `LecturesPage.tsx`: add "Sample" badge to all lecture cards (live and recorded)
+1. Create `src/frontend/src/hooks/useNotifications.ts` — localStorage-based notifications store with add/read/clear functions
+2. Create `src/frontend/src/hooks/useRatings.ts` — localStorage ratings store keyed by doubtId
+3. Create `src/frontend/src/components/NotificationBell.tsx` — bell icon with badge, dropdown list
+4. Create `src/frontend/src/pages/AdminPanel.tsx` — password gate + stats dashboard
+5. Modify `LiveClassPage.tsx` — add jsPDF download button after class ends
+6. Modify `StudentDashboard.tsx` — add Progress Analytics card, ad banner, premium button
+7. Modify `TeacherDashboard.tsx` — add average rating display
+8. Modify `LearningHub.tsx` — add ad banner
+9. Modify `LandingPage.tsx` — add sponsorship line in footer
+10. Modify `Header` component — integrate NotificationBell
+11. Modify `main.tsx` — add /admin route
+12. Install jsPDF via package.json

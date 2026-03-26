@@ -740,6 +740,9 @@ export default function LandingPage() {
           >
             caffeine.ai
           </a>
+          <div className="text-white/30 text-xs mt-1">
+            Powered by Team Spark · Built for Indian Students
+          </div>
         </div>
       </footer>
     </div>

@@ -128,6 +128,14 @@ export default function LearningHub() {
         </motion.div>
       </section>
 
+      {/* Ad Banner */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 pb-6">
+        <div className="border border-dashed border-primary/20 bg-primary/5 rounded-xl p-3 text-xs text-muted-foreground text-center">
+          📢 Sponsored · Reach AskSpark&#39;s learning community ·
+          sponsor@askspark.app
+        </div>
+      </div>
+
       {/* Footer */}
       <footer className="text-center py-8 text-xs text-muted-foreground border-t border-border/40">
         © {new Date().getFullYear()}. Built with ❤️ using{" "}

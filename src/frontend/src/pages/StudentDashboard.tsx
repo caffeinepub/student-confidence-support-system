@@ -9,9 +9,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { rtdbListen } from "@/hooks/useFirebaseRTDB";
 import { useNavigate } from "@tanstack/react-router";
 import {
   Award,
@@ -167,9 +169,101 @@ type TestHistoryItem = {
   date: string;
 };
 
+// ── Active Live Classes ───────────────────────────────────────────────────────
+interface LiveClass {
+  id: string;
+  title: string;
+  subject: string;
+  hostName: string;
+  viewerCount: number;
+  active: boolean;
+}
+
+function ActiveLiveClasses({
+  navigate,
+}: {
+  navigate: ReturnType<typeof import("@tanstack/react-router").useNavigate>;
+}) {
+  const [classes, setClasses] = useState<LiveClass[]>([]);
+
+  useEffect(() => {
+    const unsub = rtdbListen("liveClasses", (val) => {
+      const raw = val as Record<string, Omit<LiveClass, "id">> | null;
+      if (!raw) {
+        setClasses([]);
+        return;
+      }
+      const active = Object.entries(raw)
+        .filter(([, c]) => c.active)
+        .map(([id, c]) => ({ ...c, id }));
+      setClasses(active);
+    });
+    return unsub;
+  }, []);
+
+  if (classes.length === 0) {
+    return (
+      <div className="rounded-2xl glass-card border-white/40 warm-shadow p-5">
+        <h2 className="font-display font-bold text-foreground mb-2 flex items-center gap-2">
+          🎥 Live Classes
+        </h2>
+        <div
+          className="text-center text-muted-foreground text-sm py-4"
+          data-ocid="liveclass.empty_state"
+        >
+          No live classes right now. Check back soon!
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-2xl glass-card border-white/40 warm-shadow p-5">
+      <h2 className="font-display font-bold text-foreground mb-3 flex items-center gap-2">
+        <span className="inline-block w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+        Live Classes
+      </h2>
+      <div className="space-y-2">
+        {classes.map((c, i) => (
+          <div
+            key={c.id}
+            className="flex items-center justify-between p-3 rounded-xl bg-muted/40"
+            data-ocid={`liveclass.item.${i + 1}`}
+          >
+            <div>
+              <div className="font-semibold text-sm">{c.title}</div>
+              <div className="text-xs text-muted-foreground">
+                {c.subject} · {c.hostName} · {c.viewerCount ?? 0} watching
+              </div>
+            </div>
+            <button
+              type="button"
+              className="px-4 py-1.5 rounded-full bg-red-500 hover:bg-red-600 text-white text-xs font-semibold transition-colors"
+              onClick={() =>
+                navigate({ to: `/live/${c.id}`, search: { role: "viewer" } })
+              }
+              data-ocid={`liveclass.primary_button.${i + 1}`}
+            >
+              Join
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function StudentDashboard() {
   const navigate = useNavigate();
   const localProfile = loadLocalProfile();
+  const [premiumOpen, setPremiumOpen] = useState(false);
+  const classesAttended = (() => {
+    try {
+      return Number(localStorage.getItem("askspark_attended_classes") ?? "0");
+    } catch {
+      return 0;
+    }
+  })();
 
   // Real doubts from localStorage
   const [realDoubts, setRealDoubts] = useState<LocalDoubt[]>(() => {
@@ -637,6 +731,68 @@ export default function StudentDashboard() {
           </Badge>
         </div>
 
+        {/* Progress Analytics */}
+        <Card
+          className="glass-card border-white/40 warm-shadow"
+          data-ocid="student.progress.card"
+        >
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-primary" />
+                <h2 className="font-display font-bold text-foreground">
+                  Your Progress
+                </h2>
+              </div>
+              <button
+                type="button"
+                className="text-xs bg-gradient-to-r from-amber-400 to-orange-400 text-white px-3 py-1.5 rounded-full font-semibold hover:opacity-90 transition-opacity flex items-center gap-1"
+                onClick={() => setPremiumOpen(true)}
+                data-ocid="student.premium.button"
+              >
+                ✨ Go Premium
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="bg-muted/40 rounded-xl p-3 text-center">
+                <div className="text-2xl font-display font-bold text-foreground">
+                  {realDoubts.length}
+                </div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  Doubts Asked
+                </div>
+              </div>
+              <div className="bg-muted/40 rounded-xl p-3 text-center">
+                <div className="text-2xl font-display font-bold text-foreground">
+                  {classesAttended}
+                </div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  Classes Attended
+                </div>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Doubts progress</span>
+                <span>{realDoubts.length} / 10</span>
+              </div>
+              <Progress
+                value={Math.min((realDoubts.length / 10) * 100, 100)}
+                className="h-2 rounded-full"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground mt-3">
+              {realDoubts.length === 0
+                ? "🌱 Start by asking your first doubt!"
+                : realDoubts.length < 5
+                  ? "📚 Great start! Keep asking doubts to build confidence."
+                  : realDoubts.length < 10
+                    ? "🔥 You're on a roll! Almost at 10 doubts."
+                    : "🏆 Amazing! You've asked 10+ doubts. You're a champion learner!"}
+            </p>
+          </CardContent>
+        </Card>
+
         {/* Learning Hub Shortcut */}
         <button
           type="button"
@@ -1051,6 +1207,16 @@ export default function StudentDashboard() {
           </div>
         </div>
 
+        {/* Ad Banner */}
+        <div
+          className="border border-dashed border-primary/20 bg-primary/5 rounded-xl p-3 text-xs text-muted-foreground text-center"
+          data-ocid="student.ad.panel"
+        >
+          📢 Your Ad Here — Partner with AskSpark
+          <br />
+          Reach 10,000+ students · sponsor@askspark.app
+        </div>
+
         <div className="text-center text-xs text-muted-foreground py-6">
           © {new Date().getFullYear()}. Built with ❤️ using{" "}
           <a
@@ -1078,6 +1244,76 @@ export default function StudentDashboard() {
             );
           })()}
       </main>
+
+      {/* Premium Dialog */}
+      <Dialog open={premiumOpen} onOpenChange={setPremiumOpen}>
+        <DialogContent className="max-w-sm" data-ocid="student.premium.dialog">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-center">
+              ✨ AskSpark Premium
+            </DialogTitle>
+            <DialogDescription className="text-center text-sm mt-1">
+              Unlock advanced features for a better learning experience
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 mt-2">
+            {[
+              {
+                icon: "⚡",
+                title: "Priority Doubt Answers",
+                desc: "Get answers 3x faster from teachers",
+              },
+              {
+                icon: "💬",
+                title: "Faster Teacher Response",
+                desc: "Direct access to top educators",
+              },
+              {
+                icon: "📊",
+                title: "Advanced Analytics",
+                desc: "Deep insights into your learning patterns",
+              },
+              {
+                icon: "🏆",
+                title: "Exclusive Badges",
+                desc: "Premium profile badges & rewards",
+              },
+            ].map((f) => (
+              <div
+                key={f.title}
+                className="flex items-start gap-3 p-3 rounded-xl bg-muted/40"
+              >
+                <span className="text-xl">{f.icon}</span>
+                <div>
+                  <div className="font-semibold text-sm">{f.title}</div>
+                  <div className="text-xs text-muted-foreground">{f.desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 p-3 rounded-xl bg-amber-50 border border-amber-200 text-center">
+            <span className="text-amber-700 font-semibold text-sm">
+              🚀 Coming Soon
+            </span>
+            <p className="text-xs text-amber-600 mt-0.5">
+              We are working on Premium. Stay tuned!
+            </p>
+          </div>
+          <DialogFooter>
+            <button
+              type="button"
+              className="w-full py-2 rounded-xl bg-gradient-to-r from-amber-400 to-orange-400 text-white font-semibold text-sm hover:opacity-90 transition-opacity"
+              onClick={() => setPremiumOpen(false)}
+              data-ocid="student.premium.close_button"
+            >
+              Got It!
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Active Live Classes */}
+      <ActiveLiveClasses navigate={navigate} />
 
       {/* First-login onboarding modal */}
       <Dialog

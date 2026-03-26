@@ -2,6 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { GraduationCap, Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { loadLocalProfile } from "../hooks/useLocalProfile";
+import NotificationBell from "./NotificationBell";
 
 const NAV_LINKS = [
   { href: "/#features", label: "Features", isAnchor: true },
@@ -70,6 +72,7 @@ export default function Header() {
         </nav>
 
         <div className="hidden md:flex items-center gap-2">
+          {loadLocalProfile() && <NotificationBell />}
           <Button
             variant="outline"
             size="sm"
@@ -129,6 +132,11 @@ export default function Header() {
             ),
           )}
           <div className="flex flex-col gap-2 pt-2 border-t border-border">
+            {loadLocalProfile() && (
+              <div className="flex justify-center">
+                <NotificationBell />
+              </div>
+            )}
             <Button
               variant="outline"
               size="sm"

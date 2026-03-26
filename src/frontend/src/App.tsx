@@ -9,6 +9,7 @@ import {
 } from "@tanstack/react-router";
 import { Suspense, lazy } from "react";
 import { AppRole } from "./backend";
+import CallManager from "./components/CallManager";
 import PageSkeleton from "./components/PageSkeleton";
 import { loadLocalProfile } from "./hooks/useLocalProfile";
 
@@ -27,10 +28,14 @@ const LearningHub = lazy(() => import("./pages/LearningHub"));
 const LecturesPage = lazy(() => import("./pages/LecturesPage"));
 const PracticePage = lazy(() => import("./pages/PracticePage"));
 const SupportPage = lazy(() => import("./pages/SupportPage"));
+const VideoCallPage = lazy(() => import("./pages/VideoCallPage"));
+const LiveClassPage = lazy(() => import("./pages/LiveClassPage"));
+const AdminPanel = lazy(() => import("./pages/AdminPanel"));
 
 const rootRoute = createRootRoute({
   component: () => (
     <>
+      <CallManager />
       <Outlet />
       <Toaster richColors position="top-right" />
     </>
@@ -128,6 +133,24 @@ const supportRoute = createRoute({
   component: SupportPage,
 });
 
+const videoCallRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/call/$callId",
+  component: VideoCallPage,
+});
+
+const liveClassRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/live/$classId",
+  component: LiveClassPage,
+});
+
+const adminRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/admin",
+  component: AdminPanel,
+});
+
 // Short URL aliases
 const blogHesitateRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -181,6 +204,9 @@ const routeTree = rootRoute.addChildren([
   lecturesRoute,
   practiceRoute,
   supportRoute,
+  videoCallRoute,
+  liveClassRoute,
+  adminRoute,
   catchAllRoute,
 ]);
 

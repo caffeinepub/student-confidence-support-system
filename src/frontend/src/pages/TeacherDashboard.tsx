@@ -3,8 +3,11 @@ import VideoCallModal from "@/components/VideoCallModal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { rtdbSet } from "@/hooks/useFirebaseRTDB";
 import { useNavigate } from "@tanstack/react-router";
 import {
   Bell,
@@ -27,6 +30,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { loadLocalProfile } from "../hooks/useLocalProfile";
+import { getAverageRating } from "../hooks/useRatings";
 
 type Priority = "High" | "Medium" | "Low";
 type AnswerMode = "text" | "voice" | "video" | "image";
@@ -506,6 +510,150 @@ type TeacherNotifItem = {
   read: boolean;
 };
 
+// ── Live Class Form ──────────────────────────────────────────────────────────
+function LiveClassForm({
+  navigate,
+  teacherName,
+  userId,
+}: {
+  navigate: ReturnType<typeof useNavigate>;
+  teacherName: string;
+  userId: string;
+}) {
+  const [title, setTitle] = useState("");
+  const [subject, setSubject] = useState("");
+
+  function startClass() {
+    if (!title.trim()) return;
+    const classId = Date.now().toString(36);
+    rtdbSet(`liveClasses/${classId}`, {
+      title: title.trim(),
+      subject: subject.trim() || "General",
+      hostId: userId,
+      hostName: teacherName,
+      startedAt: Date.now(),
+      active: true,
+      viewerCount: 0,
+    });
+    navigate({ to: `/live/${classId}`, search: { role: "host" } });
+  }
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <Label className="text-xs text-muted-foreground mb-1 block">
+          Class Title
+        </Label>
+        <Input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="e.g. Algebra - Chapter 5"
+          data-ocid="liveclass.input"
+        />
+      </div>
+      <div>
+        <Label className="text-xs text-muted-foreground mb-1 block">
+          Subject
+        </Label>
+        <Input
+          value={subject}
+          onChange={(e) => setSubject(e.target.value)}
+          placeholder="e.g. Mathematics"
+        />
+      </div>
+      <Button
+        className="w-full gradient-primary text-white"
+        onClick={startClass}
+        disabled={!title.trim()}
+        data-ocid="liveclass.primary_button"
+      >
+        🎥 Go Live
+      </Button>
+    </div>
+  );
+}
+
+// ── Call Students ─────────────────────────────────────────────────────────────
+function CallStudents({
+  navigate,
+  teacherName,
+  userId,
+  doubts,
+}: {
+  navigate: ReturnType<typeof useNavigate>;
+  teacherName: string;
+  userId: string;
+  doubts: Doubt[];
+}) {
+  // Derive unique students from doubts
+  const students = Array.from(
+    new Map(doubts.map((d) => [d.student, d])).values(),
+  ).slice(0, 6);
+
+  function initiateCall(studentName: string, callType: "audio" | "video") {
+    const studentId = `${studentName.replace(/\s+/g, "_").toLowerCase()}_${Date.now().toString(36).slice(-4)}`;
+    const callId = `${userId}_${Date.now().toString(36)}`;
+    rtdbSet(`calls/${studentId}/incoming`, {
+      callId,
+      callerName: teacherName,
+      callType,
+      callerUserId: userId,
+    });
+    navigate({ to: `/call/${callId}`, search: { role: "caller", callType } });
+  }
+
+  if (students.length === 0) {
+    return (
+      <div
+        className="text-center text-muted-foreground text-sm py-4"
+        data-ocid="call.empty_state"
+      >
+        No students yet. Students who submit doubts will appear here.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {students.map((d, i) => (
+        <div
+          key={d.id}
+          className="flex items-center justify-between p-3 rounded-xl bg-muted/40"
+          data-ocid={`call.item.${i + 1}`}
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white text-xs font-bold">
+              {d.student.charAt(0)}
+            </div>
+            <div>
+              <div className="text-sm font-medium">{d.student}</div>
+              <div className="text-xs text-muted-foreground">{d.subject}</div>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => initiateCall(d.student, "audio")}
+              data-ocid={`call.secondary_button.${i + 1}`}
+            >
+              <Mic className="w-3.5 h-3.5" />
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => initiateCall(d.student, "video")}
+              data-ocid={`call.edit_button.${i + 1}`}
+            >
+              <Video className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function TeacherDashboard() {
   const navigate = useNavigate();
   const localProfile = loadLocalProfile();
@@ -762,6 +910,40 @@ export default function TeacherDashboard() {
               </CardContent>
             </Card>
           ))}
+          {/* Average Rating card */}
+          {(() => {
+            const avg = getAverageRating();
+            return (
+              <Card
+                className="glass-card border-white/40 warm-shadow col-span-2 lg:col-span-1"
+                data-ocid="teacher.card.5"
+              >
+                <CardContent className="p-5">
+                  <div className="w-10 h-10 rounded-xl bg-yellow-50 flex items-center justify-center mb-3">
+                    <Star className="w-5 h-5 text-yellow-500" />
+                  </div>
+                  <div className="text-2xl font-display font-bold text-foreground">
+                    {avg > 0 ? `${avg.toFixed(1)} / 5` : "—"}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Avg Rating
+                  </div>
+                  {avg > 0 && (
+                    <div className="flex gap-0.5 mt-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <span
+                          key={star}
+                          className={`text-xs ${star <= Math.round(avg) ? "text-yellow-400" : "text-muted-foreground/30"}`}
+                        >
+                          ★
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })()}
         </div>
 
         <Tabs
@@ -846,6 +1028,38 @@ export default function TeacherDashboard() {
             ))}
           </TabsContent>
         </Tabs>
+
+        {/* Live Class */}
+        <Card className="glass-card border-white/40 warm-shadow">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-2 h-2 rounded-full bg-red-500" />
+              <h2 className="font-display font-bold text-foreground">
+                Start Live Class
+              </h2>
+            </div>
+            <LiveClassForm
+              navigate={navigate}
+              teacherName={localProfile?.displayName ?? "Teacher"}
+              userId={localStorage.getItem("userId") ?? ""}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Call Students */}
+        <Card className="glass-card border-white/40 warm-shadow">
+          <CardContent className="p-5">
+            <h2 className="font-display font-bold text-foreground mb-4">
+              📞 Call a Student
+            </h2>
+            <CallStudents
+              navigate={navigate}
+              teacherName={localProfile?.displayName ?? "Teacher"}
+              userId={localStorage.getItem("userId") ?? ""}
+              doubts={doubts}
+            />
+          </CardContent>
+        </Card>
 
         <div className="text-center text-xs text-muted-foreground py-6">
           © {new Date().getFullYear()}. Built with ❤️ using{" "}
