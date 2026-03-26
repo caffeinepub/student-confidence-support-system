@@ -568,6 +568,7 @@ const TEACHER_MOCK_NOTIFICATIONS = [
     id: 1,
     icon: "❓",
     type: "doubt",
+    relatedId: 1,
     text: "Arjun S. submitted a new doubt: 'Why does sin(x)/x → 1?'",
     time: "5 min ago",
     read: false,
@@ -576,6 +577,7 @@ const TEACHER_MOCK_NOTIFICATIONS = [
     id: 2,
     icon: "💬",
     type: "reply",
+    relatedId: 2,
     text: "Priya M. replied to your answer on 'Ionic vs Covalent Bonds'",
     time: "1h ago",
     read: false,
@@ -584,6 +586,7 @@ const TEACHER_MOCK_NOTIFICATIONS = [
     id: 3,
     icon: "⭐",
     type: "rating",
+    relatedId: 3,
     text: "Rahul K. rated your answer 4/5 stars on 'Stack vs Queue'",
     time: "2h ago",
     read: false,
@@ -592,6 +595,7 @@ const TEACHER_MOCK_NOTIFICATIONS = [
     id: 4,
     icon: "✉️",
     type: "message",
+    relatedId: "student_sneha",
     text: "New personal message from Sneha R.: 'Thank you for the explanation!'",
     time: "3h ago",
     read: true,
@@ -646,6 +650,18 @@ export default function TeacherDashboard() {
 
   function markAllTeacherNotifsRead() {
     setTeacherNotifs((prev) => prev.map((n) => ({ ...n, read: true })));
+  }
+
+  function handleTeacherNotifClick(n: (typeof TEACHER_MOCK_NOTIFICATIONS)[0]) {
+    markTeacherNotifRead(n.id);
+    setTeacherNotifOpen(false);
+    if (n.type === "doubt" || n.type === "reply" || n.type === "rating") {
+      document
+        .getElementById("pending-doubts")
+        ?.scrollIntoView({ behavior: "smooth" });
+    } else if (n.type === "message") {
+      navigate({ to: "/chat" });
+    }
   }
 
   const STATS = [
@@ -739,7 +755,7 @@ export default function TeacherDashboard() {
                         key={n.id}
                         type="button"
                         className={`w-full text-left px-4 py-3 flex items-start gap-3 hover:bg-muted/40 transition-colors border-b border-border/30 last:border-0 ${n.read ? "opacity-60" : ""}`}
-                        onClick={() => markTeacherNotifRead(n.id)}
+                        onClick={() => handleTeacherNotifClick(n)}
                       >
                         <span className="text-lg flex-shrink-0 mt-0.5">
                           {n.icon}
@@ -811,7 +827,11 @@ export default function TeacherDashboard() {
           ))}
         </div>
 
-        <Tabs defaultValue="pending" data-ocid="teacher.tab">
+        <Tabs
+          defaultValue="pending"
+          data-ocid="teacher.tab"
+          id="pending-doubts"
+        >
           <TabsList className="bg-muted/50 rounded-xl p-1">
             <TabsTrigger
               value="pending"

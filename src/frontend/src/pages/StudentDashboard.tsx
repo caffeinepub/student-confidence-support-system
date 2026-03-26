@@ -135,6 +135,8 @@ const MOCK_NOTIFICATIONS = [
   {
     id: 1,
     icon: "\u2705",
+    type: "doubt_reply",
+    relatedId: 1,
     text: "Prof. Meena Rao answered your Math doubt",
     time: "2h ago",
     read: false,
@@ -142,6 +144,8 @@ const MOCK_NOTIFICATIONS = [
   {
     id: 2,
     icon: "\ud83d\udcac",
+    type: "message",
+    relatedId: "teacher_arjun",
     text: "New message from Mr. Arjun Das",
     time: "4h ago",
     read: false,
@@ -149,6 +153,8 @@ const MOCK_NOTIFICATIONS = [
   {
     id: 3,
     icon: "\ud83d\udcdd",
+    type: "weekly_test",
+    relatedId: null as number | string | null,
     text: "Your weekly test is ready!",
     time: "1d ago",
     read: false,
@@ -302,6 +308,20 @@ export default function StudentDashboard() {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   }
 
+  function handleNotifClick(n: (typeof MOCK_NOTIFICATIONS)[0]) {
+    markRead(n.id);
+    setNotifOpen(false);
+    if (n.type === "doubt_reply") {
+      document
+        .getElementById("doubts-section")
+        ?.scrollIntoView({ behavior: "smooth" });
+    } else if (n.type === "message") {
+      navigate({ to: "/chat" });
+    } else if (n.type === "weekly_test") {
+      navigate({ to: "/weekly-test" });
+    }
+  }
+
   function submitReply(doubtId: number) {
     const text = (replyInputs[doubtId] ?? "").trim();
     if (!text) return;
@@ -337,7 +357,7 @@ export default function StudentDashboard() {
           key={n.id}
           type="button"
           className={`w-full text-left px-4 py-3 flex items-start gap-3 hover:bg-muted/40 transition-colors border-b border-border/30 last:border-0 ${n.read ? "opacity-60" : ""}`}
-          onClick={() => markRead(n.id)}
+          onClick={() => handleNotifClick(n)}
         >
           <span className="text-lg flex-shrink-0 mt-0.5">{n.icon}</span>
           <div className="flex-1 min-w-0">
@@ -908,7 +928,7 @@ export default function StudentDashboard() {
         </div>
 
         {/* Recent doubts */}
-        <div>
+        <div id="doubts-section">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-display text-xl font-bold text-foreground">
               Recent Doubts
