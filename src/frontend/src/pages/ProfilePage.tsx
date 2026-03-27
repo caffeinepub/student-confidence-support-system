@@ -26,6 +26,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AppRole } from "../backend";
 import { loadLocalProfile, saveLocalProfile } from "../hooks/useLocalProfile";
+import type { LocalProfile } from "../hooks/useLocalProfile";
 import { saveUserToFirestore } from "../lib/useFirestoreUsers";
 import {
   isTeacherInitialized,
@@ -51,7 +52,9 @@ type SwitchStep =
 
 export default function ProfilePage() {
   const navigate = useNavigate();
-  const profile = loadLocalProfile();
+  const [profile, setProfile] = useState<LocalProfile | null>(() =>
+    loadLocalProfile(),
+  );
 
   const [displayName, setDisplayName] = useState(profile?.displayName ?? "");
   const [interests, setInterests] = useState<string[]>(
@@ -79,9 +82,8 @@ export default function ProfilePage() {
   const [teacherCodeError, setTeacherCodeError] = useState("");
   const [switching, setSwitching] = useState(false);
   const [handling, setHandling] = useState(false);
-  const [teacherAlreadyInitialized, setTeacherAlreadyInitialized] = useState(
-    profile?.isTeacherInitialized ?? false,
-  );
+  const [teacherAlreadyInitialized, setTeacherAlreadyInitialized] =
+    useState<boolean>(() => loadLocalProfile()?.isTeacherInitialized ?? false);
 
   // Create / reset code state
   const [newCode, setNewCode] = useState("");
@@ -180,34 +182,44 @@ export default function ProfilePage() {
 
   // ---- Save profile ----
   const handleSave = async () => {
-    if (!profile) return;
+    const currentProfile = profile ?? loadLocalProfile();
+    if (!currentProfile) {
+      toast.error("Profile not found. Please restart the app.");
+      return;
+    }
     if (!displayName.trim()) {
       toast.error("Name cannot be empty");
       return;
     }
     setSaving(true);
+    const safetyTimer = setTimeout(() => setSaving(false), 10000);
     try {
       const saved = saveLocalProfile({
-        ...profile,
+        ...currentProfile,
         displayName: displayName.trim(),
         interests,
         profileImageUrl,
       });
+      setProfile(saved);
       try {
-        await saveUserToFirestore(
-          saved.userId,
-          saved.displayName,
-          saved.role as string,
-        );
+        await Promise.race([
+          saveUserToFirestore(
+            saved.userId,
+            saved.displayName,
+            saved.role as string,
+          ),
+          new Promise<void>((resolve) => setTimeout(resolve, 5000)),
+        ]);
       } catch {
         /* ignore */
       }
       toast.success("Profile saved!");
-      setTimeout(() => navigate({ to: dashboardPath }), 800);
+      setTimeout(() => navigate({ to: getDashboardPath(saved.role) }), 800);
     } catch (err) {
-      console.error(err);
-      toast.error("Failed to save profile");
+      console.error("Profile save error:", err);
+      toast.error("Failed to save profile. Please try again.");
     } finally {
+      clearTimeout(safetyTimer);
       setSaving(false);
     }
   };
@@ -269,13 +281,18 @@ export default function ProfilePage() {
       setCodeSetupError("Codes do not match. Please try again.");
       return;
     }
-    if (!profile) return;
+    const currentProfile = profile ?? loadLocalProfile();
+    if (!currentProfile) return;
     setSavingCode(true);
     setCodeSetupError("");
-    // Safety timeout — stop loading no matter what after 5s
     const safetyTimer = setTimeout(() => setSavingCode(false), 5000);
     try {
-      await saveTeacherCode(profile.userId, newCode.trim());
+      await Promise.race([
+        saveTeacherCode(currentProfile.userId, newCode.trim()),
+        new Promise<void>((_, reject) =>
+          setTimeout(() => reject(new Error("timeout")), 5000),
+        ),
+      ]);
       setTeacherAlreadyInitialized(true);
       clearTimeout(safetyTimer);
       await performSwitch("teacher", undefined);
@@ -309,12 +326,18 @@ export default function ProfilePage() {
       setCodeSetupError("Codes do not match. Please try again.");
       return;
     }
-    if (!profile) return;
+    const currentProfile = profile ?? loadLocalProfile();
+    if (!currentProfile) return;
     setSavingCode(true);
     setCodeSetupError("");
     const safetyTimer = setTimeout(() => setSavingCode(false), 5000);
     try {
-      await saveTeacherCode(profile.userId, newCode.trim());
+      await Promise.race([
+        saveTeacherCode(currentProfile.userId, newCode.trim()),
+        new Promise<void>((_, reject) =>
+          setTimeout(() => reject(new Error("timeout")), 5000),
+        ),
+      ]);
       clearTimeout(safetyTimer);
       toast.success("Teacher code updated! You can now switch to Teacher.");
       resetSwitchState();
@@ -339,12 +362,32 @@ export default function ProfilePage() {
   };
 
   const handleChangeCodeSubmit = async () => {
-    if (!profile) return;
+    const currentProfile = profile ?? loadLocalProfile();
+    if (!currentProfile) return;
     setSavingCode(true);
     setCodeSetupError("");
     const safetyTimer = setTimeout(() => setSavingCode(false), 5000);
     try {
-      const valid = await verifyTeacherCode(profile.userId, currentCode.trim());
+      let valid: boolean;
+      try {
+        valid = await Promise.race([
+          verifyTeacherCode(currentProfile.userId, currentCode.trim()),
+          new Promise<boolean>((_, reject) =>
+            setTimeout(
+              () =>
+                reject(new Error("Verification timed out. Please try again.")),
+              5000,
+            ),
+          ),
+        ]);
+      } catch (err) {
+        const msg =
+          err instanceof Error
+            ? err.message
+            : "Verification timed out. Please try again.";
+        setCodeSetupError(msg);
+        return;
+      }
       if (!valid) {
         setCodeSetupError("Current code is incorrect.");
         return;
@@ -357,7 +400,12 @@ export default function ProfilePage() {
         setCodeSetupError("New codes do not match.");
         return;
       }
-      await saveTeacherCode(profile.userId, newCode.trim());
+      await Promise.race([
+        saveTeacherCode(currentProfile.userId, newCode.trim()),
+        new Promise<void>((_, reject) =>
+          setTimeout(() => reject(new Error("timeout")), 5000),
+        ),
+      ]);
       clearTimeout(safetyTimer);
       toast.success("Teacher code updated successfully!");
       resetSwitchState();
@@ -374,12 +422,13 @@ export default function ProfilePage() {
     role: "student" | "teacher",
     code: string | undefined,
   ) => {
-    if (!profile) return;
+    const currentProfile = profile ?? loadLocalProfile();
+    if (!currentProfile) return;
     setSwitching(true);
     setTeacherCodeError("");
     const safetyTimer = setTimeout(() => setSwitching(false), 8000);
     try {
-      const result = await switchRole(profile.userId, role, code);
+      const result = await switchRole(currentProfile.userId, role, code);
       if (!result.success) {
         setTeacherCodeError(result.error ?? "Switch failed.");
         return;
