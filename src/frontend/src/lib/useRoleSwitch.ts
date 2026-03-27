@@ -1,21 +1,16 @@
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { AppRole } from "../backend";
 import { loadLocalProfile, saveLocalProfile } from "../hooks/useLocalProfile";
 import { db } from "./firebase";
 import { saveUserToFirestore } from "./useFirestoreUsers";
 
-export const TEACHER_CODE = "SPARK2024";
-
 /**
  * Checks if the user has already been a teacher before.
- * Returns true if isTeacherInitialized is set in Firestore or localStorage.
  */
 export async function isTeacherInitialized(userId: string): Promise<boolean> {
-  // Check localStorage first (fast path)
   const profile = loadLocalProfile();
   if (profile?.isTeacherInitialized) return true;
 
-  // Check Firestore as fallback
   try {
     const snap = await getDoc(doc(db, "users", userId));
     if (snap.exists()) {
@@ -27,14 +22,83 @@ export async function isTeacherInitialized(userId: string): Promise<boolean> {
   return false;
 }
 
+/**
+ * Fetch the user's saved teacher code from Firestore.
+ */
+export async function getTeacherCodeFromFirestore(
+  userId: string,
+): Promise<string | null> {
+  try {
+    const snap = await getDoc(doc(db, "users", userId));
+    if (snap.exists()) {
+      return (snap.data()?.teacherCode as string) ?? null;
+    }
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
+/**
+ * Save or update the user's personal teacher code in Firestore.
+ */
+export async function saveTeacherCode(
+  userId: string,
+  code: string,
+): Promise<void> {
+  try {
+    await updateDoc(doc(db, "users", userId), {
+      teacherCode: code,
+      isTeacherInitialized: true,
+    });
+  } catch {
+    /* ignore network errors */
+  }
+  // Also cache locally (never display this — only for fast validation fallback)
+  try {
+    const profile = loadLocalProfile();
+    if (profile) {
+      saveLocalProfile({ ...profile, isTeacherInitialized: true });
+    }
+    localStorage.setItem("askspark_teacher_code_hash", btoa(code));
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
+ * Validate a code the user typed against their saved code in Firestore.
+ * Falls back to localStorage cached hash if Firestore is unavailable.
+ */
+export async function validateTeacherCode(
+  userId: string,
+  enteredCode: string,
+): Promise<boolean> {
+  // Try Firestore first (authoritative)
+  const saved = await getTeacherCodeFromFirestore(userId);
+  if (saved !== null) {
+    return saved === enteredCode.trim();
+  }
+  // Fallback: check local hash
+  const localHash = localStorage.getItem("askspark_teacher_code_hash");
+  if (localHash) {
+    try {
+      return atob(localHash) === enteredCode.trim();
+    } catch {
+      /* ignore */
+    }
+  }
+  return false;
+}
+
 export async function switchRole(
   userId: string,
   newRole: "student" | "teacher",
   teacherCode?: string,
 ): Promise<{ success: boolean; error?: string }> {
   if (newRole === "teacher" && teacherCode !== undefined) {
-    // Code was provided — validate it
-    if (teacherCode.trim() !== TEACHER_CODE) {
+    const valid = await validateTeacherCode(userId, teacherCode);
+    if (!valid) {
       return {
         success: false,
         error: "Incorrect teacher code. Please try again.",
@@ -68,7 +132,7 @@ export async function switchRole(
       isFirstTimeTeacher,
     );
   } catch {
-    /* best-effort — localStorage already updated */
+    /* best-effort */
   }
 
   return { success: true };

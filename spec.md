@@ -1,48 +1,27 @@
-# AskSpark — Smart Features Upgrade
+# AskSpark
 
 ## Current State
-AskSpark is a full EdTech platform with:
-- Student & Teacher dashboards (localStorage-based, no auth)
-- Doubt submission, chat, group rooms, leaderboard, points
-- Learning Hub: Lectures, DPP Practice, AI Bot support
-- WebRTC calls (teacher-initiated), live class broadcast, in-class chat/doubt
-- Blog, SEO, notifications bell (existing)
-- Gamification (points, badges, leaderboard) already implemented
+Role switching exists on the Profile page. First-time teacher switch requires no code; subsequent switches validated against a global hardcoded code (`SPARK2024`). No per-user teacher code exists.
 
 ## Requested Changes (Diff)
 
 ### Add
-- **PDF Notes download** on LiveClassPage: after class ends, show a "Download Notes PDF" button that generates a jsPDF document with lecture title, chat messages (as topics covered), and key points
-- **Notification system** with bell icon in Header: show count badge, dropdown with notifications for students (incoming call, class started, doubt answered) and teachers (new doubt in class, call request). Store in localStorage. Clicking a notification navigates to the relevant page and marks it read.
-- **Answer Rating** on SubmitDoubt / doubts list: after a doubt is shown as "answered", student can rate 1–5 stars. Save rating in localStorage keyed by doubtId. Show average teacher rating on TeacherDashboard.
-- **Progress Analytics card** on StudentDashboard: "Your Progress" section showing doubts asked (count from localStorage), classes attended (count from localStorage callHistory), and a simple progress bar.
-- **Ad placeholder banners** on StudentDashboard and LearningHub: styled card saying "📢 Your Ad Here — Sponsor AskSpark" with a subtle border. Non-intrusive, small, at bottom of page.
-- **Sponsorship footer section**: "Powered by [Sponsor Name]" line in the app footer on LandingPage.
-- **Admin Panel** at `/admin`: password-protected (hardcoded: "spark2024"). Shows: total users count (from localStorage), doubts list, basic activity stats. Simple table UI.
-- **Premium badge** on StudentDashboard: demo "Go Premium" button that shows a modal explaining premium features (Priority answers, faster response, advanced analytics). No payment — just a UI indicator for demo.
+- Per-user teacher code stored in Firebase Firestore (`users/{id}.teacherCode`)
+- `create-teacher-code` step: after first-time teacher confirm, prompt user to set their own code (min 6 chars, confirmed twice) before switching
+- `reset-teacher-code` step: self-service reset flow reachable via "Forgot Teacher Code?" link in the code entry dialog
+- `saveTeacherCode`, `validateTeacherCode`, `getTeacherCodeFromFirestore` utility functions
+- Show/hide toggle (eye icon) on all password inputs in the code dialogs
 
 ### Modify
-- **LiveClassPage**: add Download Notes PDF button that appears after class ends (teacher side)
-- **Header**: add notification bell with unread count badge, clicking opens dropdown
-- **StudentDashboard**: add Progress Analytics card and ad banner
-- **LearningHub**: add ad banner at bottom
-- **TeacherDashboard**: add average rating display and notification integration
-- **LandingPage footer**: add sponsorship line
-- **main.tsx router**: add `/admin` route
+- `useRoleSwitch.ts`: remove global `TEACHER_CODE`; validate against Firestore-saved per-user code; add local hash cache fallback
+- `ProfilePage.tsx`: add new `SwitchStep` variants; wire up create/reset flows; update hint text to reflect per-user code
+- `package.json`: add `firebase` as a runtime dependency (was missing)
 
 ### Remove
-- Nothing removed
+- Global `TEACHER_CODE = "SPARK2024"` constant
 
 ## Implementation Plan
-1. Create `src/frontend/src/hooks/useNotifications.ts` — localStorage-based notifications store with add/read/clear functions
-2. Create `src/frontend/src/hooks/useRatings.ts` — localStorage ratings store keyed by doubtId
-3. Create `src/frontend/src/components/NotificationBell.tsx` — bell icon with badge, dropdown list
-4. Create `src/frontend/src/pages/AdminPanel.tsx` — password gate + stats dashboard
-5. Modify `LiveClassPage.tsx` — add jsPDF download button after class ends
-6. Modify `StudentDashboard.tsx` — add Progress Analytics card, ad banner, premium button
-7. Modify `TeacherDashboard.tsx` — add average rating display
-8. Modify `LearningHub.tsx` — add ad banner
-9. Modify `LandingPage.tsx` — add sponsorship line in footer
-10. Modify `Header` component — integrate NotificationBell
-11. Modify `main.tsx` — add /admin route
-12. Install jsPDF via package.json
+1. Update `useRoleSwitch.ts` — remove global code, add `getTeacherCodeFromFirestore`, `saveTeacherCode`, `validateTeacherCode`
+2. Update `ProfilePage.tsx` — add `create-teacher-code` and `reset-teacher-code` dialog steps
+3. Install `firebase` package
+4. Validate and build
