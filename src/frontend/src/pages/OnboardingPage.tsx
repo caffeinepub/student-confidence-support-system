@@ -26,7 +26,9 @@ import {
   SCHOOL_CLASSES,
   type UserType,
 } from "../data/branchData";
+import { getOrCreateUserId } from "../hooks/useLocalProfile";
 import { useSubmitProfile, useUserProfile } from "../hooks/useQueries";
+import { saveUserToFirestore } from "../lib/useFirestoreUsers";
 
 export default function OnboardingPage() {
   const navigate = useNavigate();
@@ -77,6 +79,13 @@ export default function OnboardingPage() {
         userBranch: userBranch || undefined,
       });
 
+      // Also save to Firestore (best effort)
+      try {
+        const uid = getOrCreateUserId();
+        await saveUserToFirestore(uid, displayName.trim(), role as string);
+      } catch {
+        /* ignore — localStorage is primary */
+      }
       toast.success("Profile created! Welcome aboard 🎉");
       if (role === AppRole.teacher) {
         navigate({ to: "/dashboard/teacher" });

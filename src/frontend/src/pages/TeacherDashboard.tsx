@@ -15,500 +15,26 @@ import {
   ChevronDown,
   ChevronUp,
   Clock,
-  ImageIcon,
   Loader2,
   LogOut,
   MessageSquare,
   Mic,
-  MicOff,
   Send,
   Star,
   TrendingUp,
   Video,
-  X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { loadLocalProfile } from "../hooks/useLocalProfile";
-import { getAverageRating } from "../hooks/useRatings";
-
-type Priority = "High" | "Medium" | "Low";
-type AnswerMode = "text" | "voice" | "video" | "image";
-
-interface DoubtAnswer {
-  text?: string;
-  voiceUrl?: string;
-  videoUrl?: string;
-  imageUrl?: string;
-}
-
-interface Doubt {
-  id: number;
-  student: string;
-  subject: string;
-  subjectColor: string;
-  title: string;
-  description: string;
-  timeAgo: string;
-  priority: Priority;
-  status: "pending" | "answered";
-  answer?: DoubtAnswer;
-}
-
-const PRIORITY_COLORS: Record<Priority, string> = {
-  High: "bg-red-100 text-red-700 border-red-200",
-  Medium: "bg-amber-100 text-amber-700 border-amber-200",
-  Low: "bg-green-100 text-green-700 border-green-200",
-};
-
-function AnswerPanel({
-  doubtId,
-  onSubmit,
-}: { doubtId: number; onSubmit: (id: number, answer: DoubtAnswer) => void }) {
-  const [mode, setMode] = useState<AnswerMode>("text");
-  const [text, setText] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordedBlob, setRecordedBlob] = useState<string | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
-
-  const startRecording = async (type: "audio" | "video") => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia(
-        type === "video" ? { video: true, audio: true } : { audio: true },
-      );
-      const mr = new MediaRecorder(stream);
-      mediaRecorderRef.current = mr;
-      chunksRef.current = [];
-      mr.ondataavailable = (e) => chunksRef.current.push(e.data);
-      mr.onstop = () => {
-        const blob = new Blob(chunksRef.current, {
-          type: type === "video" ? "video/webm" : "audio/webm",
-        });
-        setRecordedBlob(URL.createObjectURL(blob));
-        for (const t of stream.getTracks()) {
-          t.stop();
-        }
-      };
-      mr.start();
-      setIsRecording(true);
-    } catch {
-      toast.error("Could not access microphone/camera.");
-    }
-  };
-
-  const stopRecording = () => {
-    mediaRecorderRef.current?.stop();
-    setIsRecording(false);
-  };
-
-  const handleSubmit = async () => {
-    if (!text.trim() && !recordedBlob && !imagePreview) {
-      toast.error("Please provide an answer.");
-      return;
-    }
-    setSubmitting(true);
-    await new Promise((r) => setTimeout(r, 1200));
-    const answer: DoubtAnswer = {};
-    if (text.trim()) answer.text = text.trim();
-    if (mode === "voice" && recordedBlob) answer.voiceUrl = recordedBlob;
-    if (mode === "video" && recordedBlob) answer.videoUrl = recordedBlob;
-    if (mode === "image" && imagePreview) answer.imageUrl = imagePreview;
-    onSubmit(doubtId, answer);
-    setSubmitting(false);
-    toast.success("Answer submitted! The student has been notified. 🎉");
-  };
-
-  const MODES: { key: AnswerMode; icon: React.ElementType; label: string }[] = [
-    { key: "text", icon: MessageSquare, label: "Text" },
-    { key: "voice", icon: Mic, label: "Voice" },
-    { key: "video", icon: Video, label: "Video" },
-    { key: "image", icon: ImageIcon, label: "Image" },
-  ];
-
-  return (
-    <div className="mt-4 pt-4 border-t border-border space-y-4">
-      <div className="text-sm font-display font-bold text-foreground">
-        📬 Your Response
-      </div>
-      <div className="flex gap-2 flex-wrap">
-        {MODES.map((m) => (
-          <button
-            key={m.key}
-            type="button"
-            onClick={() => {
-              setMode(m.key);
-              setRecordedBlob(null);
-              setImagePreview(null);
-            }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
-              mode === m.key
-                ? "gradient-primary text-white border-transparent shadow-primary"
-                : "bg-muted text-muted-foreground border-border hover:border-primary/30"
-            }`}
-            data-ocid="teacher.toggle"
-          >
-            <m.icon className="w-3.5 h-3.5" />
-            {m.label}
-          </button>
-        ))}
-      </div>
-
-      {mode === "text" && (
-        <Textarea
-          placeholder="Type your answer here. Be clear, concise, and encouraging..."
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          className="min-h-[120px] resize-none border-border"
-          data-ocid="teacher.textarea"
-        />
-      )}
-
-      {mode === "voice" && (
-        <div className="space-y-3">
-          {!recordedBlob ? (
-            <div className="flex flex-col items-center gap-3 p-6 bg-muted/40 rounded-xl border border-border">
-              <div
-                className={`w-16 h-16 rounded-full flex items-center justify-center transition-all ${
-                  isRecording ? "bg-red-500 animate-pulse-soft" : "bg-muted"
-                }`}
-              >
-                {isRecording ? (
-                  <MicOff className="w-7 h-7 text-white" />
-                ) : (
-                  <Mic className="w-7 h-7 text-muted-foreground" />
-                )}
-              </div>
-              {isRecording ? (
-                <>
-                  <div className="text-xs text-red-500 font-medium animate-pulse">
-                    ● Recording...
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="rounded-full"
-                    onClick={stopRecording}
-                    data-ocid="teacher.secondary_button"
-                  >
-                    Stop Recording
-                  </Button>
-                </>
-              ) : (
-                <Button
-                  size="sm"
-                  className="rounded-full gradient-primary text-white border-0"
-                  onClick={() => startRecording("audio")}
-                  data-ocid="teacher.primary_button"
-                >
-                  Start Recording
-                </Button>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <audio controls src={recordedBlob} className="w-full">
-                <track kind="captions" />
-              </audio>
-              <Button
-                size="sm"
-                variant="outline"
-                className="rounded-lg text-xs"
-                onClick={() => setRecordedBlob(null)}
-                data-ocid="teacher.delete_button"
-              >
-                <X className="w-3 h-3 mr-1" /> Re-record
-              </Button>
-            </div>
-          )}
-          <Textarea
-            placeholder="Add text notes (optional)"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            className="resize-none border-border"
-            rows={2}
-            data-ocid="teacher.textarea"
-          />
-        </div>
-      )}
-
-      {mode === "video" && (
-        <div className="space-y-3">
-          {!recordedBlob ? (
-            <div className="flex flex-col items-center gap-3 p-6 bg-muted/40 rounded-xl border border-border">
-              <div
-                className={`w-16 h-16 rounded-full flex items-center justify-center transition-all ${
-                  isRecording ? "bg-red-500 animate-pulse-soft" : "bg-muted"
-                }`}
-              >
-                <Video
-                  className={`w-7 h-7 ${isRecording ? "text-white" : "text-muted-foreground"}`}
-                />
-              </div>
-              {isRecording ? (
-                <>
-                  <div className="text-xs text-red-500 font-medium animate-pulse">
-                    ● Recording video...
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="rounded-full"
-                    onClick={stopRecording}
-                    data-ocid="teacher.secondary_button"
-                  >
-                    Stop
-                  </Button>
-                </>
-              ) : (
-                <Button
-                  size="sm"
-                  className="rounded-full gradient-primary text-white border-0"
-                  onClick={() => startRecording("video")}
-                  data-ocid="teacher.primary_button"
-                >
-                  Start Video
-                </Button>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <video controls src={recordedBlob} className="w-full rounded-xl">
-                <track kind="captions" />
-              </video>
-              <Button
-                size="sm"
-                variant="outline"
-                className="rounded-lg text-xs"
-                onClick={() => setRecordedBlob(null)}
-                data-ocid="teacher.delete_button"
-              >
-                <X className="w-3 h-3 mr-1" /> Re-record
-              </Button>
-            </div>
-          )}
-          <Textarea
-            placeholder="Add text notes (optional)"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            className="resize-none border-border"
-            rows={2}
-            data-ocid="teacher.textarea"
-          />
-        </div>
-      )}
-
-      {mode === "image" && (
-        <div className="space-y-3">
-          <button
-            type="button"
-            className="border-2 border-dashed border-border rounded-xl p-8 text-center cursor-pointer hover:border-primary/50 transition-colors w-full"
-            onClick={() => fileInputRef.current?.click()}
-            data-ocid="teacher.dropzone"
-          >
-            {imagePreview ? (
-              <img
-                src={imagePreview}
-                alt="Preview"
-                className="max-h-48 mx-auto rounded-xl"
-              />
-            ) : (
-              <>
-                <ImageIcon className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                <div className="text-sm text-muted-foreground">
-                  Click to upload an image
-                </div>
-              </>
-            )}
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) setImagePreview(URL.createObjectURL(f));
-            }}
-            data-ocid="teacher.upload_button"
-          />
-          <Textarea
-            placeholder="Add text notes (optional)"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            className="resize-none border-border"
-            rows={2}
-            data-ocid="teacher.textarea"
-          />
-        </div>
-      )}
-
-      <Button
-        className="w-full rounded-xl gradient-primary text-white border-0 shadow-primary font-semibold hover:opacity-90"
-        onClick={handleSubmit}
-        disabled={submitting}
-        data-ocid="teacher.submit_button"
-      >
-        {submitting ? (
-          <>
-            <Loader2 className="mr-2 w-4 h-4 animate-spin" /> Submitting...
-          </>
-        ) : (
-          <>
-            <Send className="mr-2 w-4 h-4" /> Submit Answer
-          </>
-        )}
-      </Button>
-    </div>
-  );
-}
-
-function DoubtCard({
-  doubt,
-  expanded,
-  onToggle,
-  onAnswerSubmit,
-}: {
-  doubt: Doubt;
-  expanded: boolean;
-  onToggle: () => void;
-  onAnswerSubmit: (id: number, answer: DoubtAnswer) => void;
-}) {
-  const [videoCallOpen, setVideoCallOpen] = useState(false);
-  return (
-    <Card
-      className="glass-card border-white/40 warm-shadow hover:warm-shadow-lg transition-all duration-300"
-      data-ocid={`teacher.item.${doubt.id}`}
-    >
-      <CardContent className="p-5">
-        <button
-          type="button"
-          className="flex items-start gap-3 cursor-pointer w-full text-left"
-          onClick={onToggle}
-        >
-          <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary flex-shrink-0">
-            {doubt.student === "Anonymous" ? "?" : doubt.student.charAt(0)}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap mb-1">
-              <Badge className={`${doubt.subjectColor} border-0 text-xs`}>
-                {doubt.subject}
-              </Badge>
-              <Badge className={`text-xs ${PRIORITY_COLORS[doubt.priority]}`}>
-                {doubt.priority}
-              </Badge>
-              {doubt.status === "answered" && (
-                <Badge className="bg-green-100 text-green-700 border-green-200 text-xs">
-                  <CheckCircle2 className="w-3 h-3 mr-1" /> Answered
-                </Badge>
-              )}
-            </div>
-            <div className="font-medium text-foreground text-sm">
-              {doubt.title}
-            </div>
-            <div className="flex items-center gap-3 mt-1">
-              <span className="text-xs text-muted-foreground">
-                {doubt.student}
-              </span>
-              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <Clock className="w-3 h-3" />
-                {doubt.timeAgo}
-              </span>
-            </div>
-          </div>
-          <div className="flex-shrink-0">
-            {expanded ? (
-              <ChevronUp className="w-4 h-4 text-muted-foreground" />
-            ) : (
-              <ChevronDown className="w-4 h-4 text-muted-foreground" />
-            )}
-          </div>
-        </button>
-
-        {expanded && (
-          <div className="mt-4 animate-fade-in">
-            <div className="bg-muted/40 rounded-xl p-4 mb-4">
-              <div className="text-xs text-muted-foreground font-medium mb-1">
-                Full Question
-              </div>
-              <p className="text-sm text-foreground leading-relaxed">
-                {doubt.description}
-              </p>
-            </div>
-            {doubt.status === "answered" && doubt.answer ? (
-              <div className="space-y-3">
-                <div className="text-sm font-display font-bold text-foreground">
-                  ✅ Your Response
-                </div>
-                {doubt.answer.voiceUrl && (
-                  <audio
-                    controls
-                    src={doubt.answer.voiceUrl}
-                    className="w-full rounded-lg"
-                  >
-                    <track kind="captions" />
-                  </audio>
-                )}
-                {doubt.answer.videoUrl && (
-                  <video
-                    controls
-                    src={doubt.answer.videoUrl}
-                    className="w-full rounded-xl"
-                  >
-                    <track kind="captions" />
-                  </video>
-                )}
-                {doubt.answer.imageUrl && (
-                  <img
-                    src={doubt.answer.imageUrl}
-                    alt="Answer"
-                    className="rounded-xl max-w-sm"
-                  />
-                )}
-                {doubt.answer.text && (
-                  <div className="bg-green-50 border border-green-100 rounded-xl p-4">
-                    <p className="text-sm text-foreground/80 leading-relaxed">
-                      {doubt.answer.text}
-                    </p>
-                  </div>
-                )}
-                <Button
-                  size="sm"
-                  className="rounded-full gradient-primary text-white border-0 shadow-primary mt-2"
-                  onClick={() => setVideoCallOpen(true)}
-                  data-ocid="teacher.primary_button"
-                >
-                  <Video className="w-4 h-4 mr-2" /> Start Video Call
-                </Button>
-                <VideoCallModal
-                  open={videoCallOpen}
-                  onClose={() => setVideoCallOpen(false)}
-                  studentName={doubt.student}
-                  isTeacher={true}
-                />
-              </div>
-            ) : (
-              <AnswerPanel doubtId={doubt.id} onSubmit={onAnswerSubmit} />
-            )}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-type TeacherNotifItem = {
-  id: number;
-  icon: string;
-  type: string;
-  relatedId: number | string | null;
-  text: string;
-  time: string;
-  read: boolean;
-};
+import { useNotifications } from "../hooks/useNotifications";
+import { useFirebaseRating } from "../hooks/useRatings";
+import {
+  type FirestoreDoubt,
+  answerDoubt,
+  useAllDoubts,
+} from "../lib/useFirestoreDoubts";
+import { type FirestoreUser, getAllStudents } from "../lib/useFirestoreUsers";
 
 // ── Live Class Form ──────────────────────────────────────────────────────────
 function LiveClassForm({
@@ -578,22 +104,22 @@ function CallStudents({
   navigate,
   teacherName,
   userId,
-  doubts,
 }: {
   navigate: ReturnType<typeof useNavigate>;
   teacherName: string;
   userId: string;
-  doubts: Doubt[];
 }) {
-  // Derive unique students from doubts
-  const students = Array.from(
-    new Map(doubts.map((d) => [d.student, d])).values(),
-  ).slice(0, 6);
+  const [students, setStudents] = useState<FirestoreUser[]>([]);
 
-  function initiateCall(studentName: string, callType: "audio" | "video") {
-    const studentId = `${studentName.replace(/\s+/g, "_").toLowerCase()}_${Date.now().toString(36).slice(-4)}`;
+  useEffect(() => {
+    getAllStudents()
+      .then(setStudents)
+      .catch(() => setStudents([]));
+  }, []);
+
+  function initiateCall(student: FirestoreUser, callType: "audio" | "video") {
     const callId = `${userId}_${Date.now().toString(36)}`;
-    rtdbSet(`calls/${studentId}/incoming`, {
+    rtdbSet(`calls/${student.id}/incoming`, {
       callId,
       callerName: teacherName,
       callType,
@@ -608,33 +134,33 @@ function CallStudents({
         className="text-center text-muted-foreground text-sm py-4"
         data-ocid="call.empty_state"
       >
-        No students yet. Students who submit doubts will appear here.
+        No students found. Students will appear here once they register.
       </div>
     );
   }
 
   return (
     <div className="space-y-2">
-      {students.map((d, i) => (
+      {students.slice(0, 6).map((s, i) => (
         <div
-          key={d.id}
+          key={s.id}
           className="flex items-center justify-between p-3 rounded-xl bg-muted/40"
           data-ocid={`call.item.${i + 1}`}
         >
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white text-xs font-bold">
-              {d.student.charAt(0)}
+              {s.name.charAt(0)}
             </div>
             <div>
-              <div className="text-sm font-medium">{d.student}</div>
-              <div className="text-xs text-muted-foreground">{d.subject}</div>
+              <div className="text-sm font-medium">{s.name}</div>
+              <div className="text-xs text-muted-foreground">Student</div>
             </div>
           </div>
           <div className="flex gap-2">
             <Button
               size="sm"
               variant="outline"
-              onClick={() => initiateCall(d.student, "audio")}
+              onClick={() => initiateCall(s, "audio")}
               data-ocid={`call.secondary_button.${i + 1}`}
             >
               <Mic className="w-3.5 h-3.5" />
@@ -642,7 +168,7 @@ function CallStudents({
             <Button
               size="sm"
               variant="outline"
-              onClick={() => initiateCall(d.student, "video")}
+              onClick={() => initiateCall(s, "video")}
               data-ocid={`call.edit_button.${i + 1}`}
             >
               <Video className="w-3.5 h-3.5" />
@@ -654,106 +180,273 @@ function CallStudents({
   );
 }
 
+// ── Firestore Doubt Card ──────────────────────────────────────────────────────
+function FirestoreDoubtCard({
+  doubt,
+  expanded,
+  onToggle,
+  teacherName,
+  onAnswered,
+}: {
+  doubt: FirestoreDoubt;
+  expanded: boolean;
+  onToggle: () => void;
+  teacherName: string;
+  onAnswered: () => void;
+}) {
+  const [answerText, setAnswerText] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [videoCallOpen, setVideoCallOpen] = useState(false);
+
+  const subjectColor = "bg-primary/10 text-primary";
+
+  async function handleSubmitAnswer() {
+    if (!answerText.trim()) {
+      toast.error("Please type an answer");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await answerDoubt(doubt.id, answerText.trim(), teacherName, doubt.userId);
+      toast.success("Answer submitted!");
+      setAnswerText("");
+      onAnswered();
+    } catch {
+      toast.error("Failed to submit answer. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  const timeAgo = (() => {
+    const diff = Date.now() - doubt.createdAt;
+    const mins = Math.floor(diff / 60000);
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    return new Date(doubt.createdAt).toLocaleDateString();
+  })();
+
+  return (
+    <Card
+      className="glass-card border-white/40 warm-shadow hover:warm-shadow-lg transition-all duration-300"
+      data-ocid={`teacher.item.${doubt.id}`}
+    >
+      <CardContent className="p-5">
+        <button
+          type="button"
+          className="flex items-start gap-3 cursor-pointer w-full text-left"
+          onClick={onToggle}
+        >
+          <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary flex-shrink-0">
+            {doubt.isAnonymous ? "?" : doubt.studentName.charAt(0)}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap mb-1">
+              <Badge className={`${subjectColor} border-0 text-xs`}>
+                {doubt.subject || "General"}
+              </Badge>
+              {doubt.status === "answered" ? (
+                <Badge className="bg-green-100 text-green-700 border-green-200 text-xs">
+                  <CheckCircle2 className="w-3 h-3 mr-1" /> Answered
+                </Badge>
+              ) : (
+                <Badge className="bg-amber-100 text-amber-700 border-amber-200 text-xs">
+                  <Clock className="w-3 h-3 mr-1" /> Pending
+                </Badge>
+              )}
+            </div>
+            <div className="font-medium text-foreground text-sm line-clamp-2">
+              {doubt.question}
+            </div>
+            <div className="flex items-center gap-3 mt-1">
+              <span className="text-xs text-muted-foreground">
+                {doubt.isAnonymous ? "Anonymous" : doubt.studentName}
+              </span>
+              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                {timeAgo}
+              </span>
+            </div>
+          </div>
+          <div className="flex-shrink-0">
+            {expanded ? (
+              <ChevronUp className="w-4 h-4 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+            )}
+          </div>
+        </button>
+
+        {expanded && (
+          <div className="mt-4 animate-fade-in">
+            <div className="bg-muted/40 rounded-xl p-4 mb-4">
+              <div className="text-xs text-muted-foreground font-medium mb-1">
+                Full Question
+              </div>
+              <p className="text-sm text-foreground leading-relaxed">
+                {doubt.question}
+              </p>
+            </div>
+
+            {doubt.status === "answered" && doubt.answer ? (
+              <div className="space-y-3">
+                <div className="text-sm font-display font-bold text-foreground">
+                  ✅ Your Response
+                </div>
+                <div className="bg-green-50 border border-green-100 rounded-xl p-4">
+                  <p className="text-sm text-foreground/80 leading-relaxed">
+                    {doubt.answer}
+                  </p>
+                  {doubt.teacherName && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      — {doubt.teacherName}
+                      {doubt.answeredAt
+                        ? `, ${new Date(doubt.answeredAt).toLocaleString()}`
+                        : ""}
+                    </p>
+                  )}
+                </div>
+                <Button
+                  size="sm"
+                  className="rounded-full gradient-primary text-white border-0 shadow-primary mt-2"
+                  onClick={() => setVideoCallOpen(true)}
+                  data-ocid="teacher.primary_button"
+                >
+                  <Video className="w-4 h-4 mr-2" /> Start Video Call
+                </Button>
+                <VideoCallModal
+                  open={videoCallOpen}
+                  onClose={() => setVideoCallOpen(false)}
+                  studentName={
+                    doubt.isAnonymous ? "Student" : doubt.studentName
+                  }
+                  isTeacher={true}
+                />
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <Textarea
+                  value={answerText}
+                  onChange={(e) => setAnswerText(e.target.value)}
+                  placeholder="Type your answer..."
+                  rows={4}
+                  data-ocid="teacher.textarea"
+                />
+                <Button
+                  className="w-full gradient-primary text-white"
+                  onClick={handleSubmitAnswer}
+                  disabled={submitting || !answerText.trim()}
+                  data-ocid="teacher.submit_button"
+                >
+                  {submitting ? (
+                    <>
+                      <Loader2 className="mr-2 w-4 h-4 animate-spin" />{" "}
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="mr-2 w-4 h-4" /> Submit Answer
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ── Rating Display ────────────────────────────────────────────────────────────
+function TeacherRatingCard({ teacherName }: { teacherName: string }) {
+  const { average, count } = useFirebaseRating(teacherName);
+  return (
+    <Card
+      className="glass-card border-white/40 warm-shadow col-span-2 lg:col-span-1"
+      data-ocid="teacher.card.5"
+    >
+      <CardContent className="p-5">
+        <div className="w-10 h-10 rounded-xl bg-yellow-50 flex items-center justify-center mb-3">
+          <Star className="w-5 h-5 text-yellow-500" />
+        </div>
+        <div className="text-2xl font-display font-bold text-foreground">
+          {average > 0 ? `${average.toFixed(1)} / 5` : "—"}
+        </div>
+        <div className="text-xs text-muted-foreground">
+          Avg Rating {count > 0 ? `(${count})` : ""}
+        </div>
+        {average > 0 && (
+          <div className="flex gap-0.5 mt-1">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <span
+                key={star}
+                className={`text-xs ${
+                  star <= Math.round(average)
+                    ? "text-yellow-400"
+                    : "text-muted-foreground/30"
+                }`}
+              >
+                ★
+              </span>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ── Main Dashboard ────────────────────────────────────────────────────────────
 export default function TeacherDashboard() {
   const navigate = useNavigate();
   const localProfile = loadLocalProfile();
-  const [doubts, setDoubts] = useState<Doubt[]>(() => {
-    try {
-      const raw = JSON.parse(
-        localStorage.getItem("askspark_doubts") || "[]",
-      ) as Array<{
-        id: string;
-        subject: string;
-        subjectColor: string;
-        title: string;
-        timestamp: number;
-        userId: string;
-      }>;
-      return raw.map((d, i) => ({
-        id: i + 1,
-        student: "Anonymous Student",
-        subject: d.subject || "General",
-        subjectColor: d.subjectColor || "bg-gray-100 text-gray-700",
-        title: d.title,
-        description: "",
-        timeAgo: d.timestamp
-          ? new Date(d.timestamp).toLocaleDateString()
-          : "Unknown",
-        priority: "Medium" as Priority,
-        status: "pending" as const,
-      }));
-    } catch {
-      return [];
-    }
-  });
-  const [teacherNotifs, setTeacherNotifs] = useState<TeacherNotifItem[]>([]);
-  const [teacherNotifOpen, setTeacherNotifOpen] = useState(false);
-  const teacherNotifRef = useRef<HTMLDivElement>(null);
-  const teacherUnreadCount = teacherNotifs.filter((n) => !n.read).length;
-  const [expanded, setExpanded] = useState<number | null>(1);
+  const userId = localProfile?.userId ?? "";
+  const teacherName = localProfile?.displayName ?? "Teacher";
 
-  const pending = doubts.filter((d) => d.status === "pending");
-  const answered = doubts.filter((d) => d.status === "answered");
-  const answeredToday = answered.filter((d) =>
-    d.timeAgo.includes("h ago"),
-  ).length;
-  const responseRate = Math.round((answered.length / doubts.length) * 100);
+  const firestoreDoubts = useAllDoubts();
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [filterTab, setFilterTab] = useState<"all" | "pending" | "answered">(
+    "pending",
+  );
 
-  const handleAnswerSubmit = (id: number, answer: DoubtAnswer) => {
-    setDoubts((prev) =>
-      prev.map((d) =>
-        d.id === id ? { ...d, status: "answered" as const, answer } : d,
-      ),
-    );
-    setExpanded(null);
-  };
+  // Notifications
+  const { notifications, unreadCount, markRead, markAllRead } =
+    useNotifications(userId);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (
-        teacherNotifRef.current &&
-        !teacherNotifRef.current.contains(e.target as Node)
-      ) {
-        setTeacherNotifOpen(false);
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setNotifOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  function markTeacherNotifRead(id: number) {
-    setTeacherNotifs((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
-    );
-  }
-
-  function markAllTeacherNotifsRead() {
-    setTeacherNotifs((prev) => prev.map((n) => ({ ...n, read: true })));
-  }
-
-  function handleTeacherNotifClick(n: TeacherNotifItem) {
-    markTeacherNotifRead(n.id);
-    setTeacherNotifOpen(false);
-    if (n.type === "doubt" || n.type === "reply" || n.type === "rating") {
-      document
-        .getElementById("pending-doubts")
-        ?.scrollIntoView({ behavior: "smooth" });
-    } else if (n.type === "message") {
-      navigate({ to: "/chat" });
-    }
-  }
+  const pending = firestoreDoubts.filter((d) => d.status === "pending");
+  const answered = firestoreDoubts.filter((d) => d.status === "answered");
+  const displayDoubts =
+    filterTab === "pending"
+      ? pending
+      : filterTab === "answered"
+        ? answered
+        : firestoreDoubts;
 
   const STATS = [
     {
       label: "Total Doubts",
-      value: doubts.length,
+      value: firestoreDoubts.length,
       icon: MessageSquare,
       color: "text-blue-500",
       bg: "bg-blue-50",
     },
     {
-      label: "Answered Today",
-      value: answeredToday,
+      label: "Answered",
+      value: answered.length,
       icon: CheckCircle2,
       color: "text-green-500",
       bg: "bg-green-50",
@@ -767,7 +460,10 @@ export default function TeacherDashboard() {
     },
     {
       label: "Response Rate",
-      value: `${responseRate}%`,
+      value:
+        firestoreDoubts.length > 0
+          ? `${Math.round((answered.length / firestoreDoubts.length) * 100)}%`
+          : "0%",
       icon: TrendingUp,
       color: "text-purple-500",
       bg: "bg-purple-50",
@@ -781,11 +477,11 @@ export default function TeacherDashboard() {
           <div className="flex items-center gap-3">
             <AvatarButton
               imageUrl={localProfile?.profileImageUrl}
-              name={localProfile?.displayName ?? "Teacher"}
+              name={teacherName}
             />
             <div>
               <div className="font-display font-bold text-foreground text-sm">
-                {localProfile?.displayName ?? "Teacher"}
+                {teacherName}
               </div>
               <Badge className="bg-green-100 text-green-700 border-green-200 text-xs">
                 Teacher
@@ -794,22 +490,22 @@ export default function TeacherDashboard() {
           </div>
           <div className="flex items-center gap-2">
             {/* Notification Bell */}
-            <div className="relative" ref={teacherNotifRef}>
+            <div className="relative" ref={notifRef}>
               <button
                 type="button"
                 className="relative w-9 h-9 rounded-full glass-card flex items-center justify-center hover:bg-muted/60 transition-colors"
-                onClick={() => setTeacherNotifOpen((o) => !o)}
-                aria-label="Teacher Notifications"
+                onClick={() => setNotifOpen((o) => !o)}
+                aria-label="Notifications"
                 data-ocid="teacher.open_modal_button"
               >
                 <Bell className="w-4 h-4 text-foreground" />
-                {teacherUnreadCount > 0 && (
+                {unreadCount > 0 && (
                   <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-0.5">
-                    {teacherUnreadCount}
+                    {unreadCount}
                   </span>
                 )}
               </button>
-              {teacherNotifOpen && (
+              {notifOpen && (
                 <div
                   className="absolute top-full mt-2 right-0 w-80 glass-card rounded-2xl shadow-xl border-white/40 overflow-hidden z-50"
                   data-ocid="teacher.popover"
@@ -818,11 +514,13 @@ export default function TeacherDashboard() {
                     <span className="font-display font-bold text-sm text-foreground">
                       Notifications
                     </span>
-                    {teacherUnreadCount > 0 && (
+                    {unreadCount > 0 && (
                       <button
                         type="button"
                         className="text-xs text-primary hover:underline"
-                        onClick={markAllTeacherNotifsRead}
+                        onClick={() => {
+                          markAllRead();
+                        }}
                         data-ocid="teacher.secondary_button"
                       >
                         Mark all read
@@ -830,38 +528,36 @@ export default function TeacherDashboard() {
                     )}
                   </div>
                   <div className="max-h-72 overflow-y-auto">
-                    {teacherNotifs.length === 0 && (
+                    {notifications.length === 0 ? (
                       <div className="py-6 text-center text-sm text-muted-foreground">
                         No notifications yet
                       </div>
-                    )}
-                    {teacherNotifs.map((n) => (
-                      <button
-                        key={n.id}
-                        type="button"
-                        className={`w-full text-left px-4 py-3 flex items-start gap-3 hover:bg-muted/40 transition-colors border-b border-border/30 last:border-0 ${n.read ? "opacity-60" : ""}`}
-                        onClick={() => handleTeacherNotifClick(n)}
-                      >
-                        <span className="text-lg flex-shrink-0 mt-0.5">
-                          {n.icon}
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm text-foreground leading-snug">
-                            {n.text}
+                    ) : (
+                      notifications.map((n) => (
+                        <button
+                          key={n.id}
+                          type="button"
+                          className={`w-full text-left px-4 py-3 flex items-start gap-3 hover:bg-muted/40 transition-colors border-b border-border/30 last:border-0 ${
+                            n.read ? "opacity-60" : ""
+                          }`}
+                          onClick={() => {
+                            markRead(n.id);
+                            setNotifOpen(false);
+                          }}
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm text-foreground leading-snug">
+                              {n.message}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-0.5">
+                              {new Date(n.createdAt).toLocaleTimeString()}
+                            </div>
                           </div>
-                          <div className="text-xs text-muted-foreground mt-0.5">
-                            {n.time}
-                          </div>
-                        </div>
-                        {!n.read && (
-                          <span className="w-2 h-2 rounded-full bg-primary flex-shrink-0 mt-1.5" />
-                        )}
-                      </button>
-                    ))}
-                    {teacherNotifs.every((n) => n.read) && (
-                      <div className="p-4 text-center text-sm text-muted-foreground">
-                        All caught up! 🎉
-                      </div>
+                          {!n.read && (
+                            <span className="w-2 h-2 rounded-full bg-primary flex-shrink-0 mt-1.5" />
+                          )}
+                        </button>
+                      ))
                     )}
                   </div>
                 </div>
@@ -890,7 +586,8 @@ export default function TeacherDashboard() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Stats */}
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           {STATS.map((s, i) => (
             <Card
               key={s.label}
@@ -910,48 +607,31 @@ export default function TeacherDashboard() {
               </CardContent>
             </Card>
           ))}
-          {/* Average Rating card */}
-          {(() => {
-            const avg = getAverageRating();
-            return (
-              <Card
-                className="glass-card border-white/40 warm-shadow col-span-2 lg:col-span-1"
-                data-ocid="teacher.card.5"
-              >
-                <CardContent className="p-5">
-                  <div className="w-10 h-10 rounded-xl bg-yellow-50 flex items-center justify-center mb-3">
-                    <Star className="w-5 h-5 text-yellow-500" />
-                  </div>
-                  <div className="text-2xl font-display font-bold text-foreground">
-                    {avg > 0 ? `${avg.toFixed(1)} / 5` : "—"}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Avg Rating
-                  </div>
-                  {avg > 0 && (
-                    <div className="flex gap-0.5 mt-1">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <span
-                          key={star}
-                          className={`text-xs ${star <= Math.round(avg) ? "text-yellow-400" : "text-muted-foreground/30"}`}
-                        >
-                          ★
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })()}
+          <TeacherRatingCard teacherName={teacherName} />
         </div>
 
+        {/* Doubts with filter tabs */}
         <Tabs
-          defaultValue="pending"
+          value={filterTab}
+          onValueChange={(v) =>
+            setFilterTab(v as "all" | "pending" | "answered")
+          }
           data-ocid="teacher.tab"
           id="pending-doubts"
         >
           <TabsList className="bg-muted/50 rounded-xl p-1">
+            <TabsTrigger
+              value="all"
+              className="rounded-lg"
+              data-ocid="teacher.tab"
+            >
+              All
+              {firestoreDoubts.length > 0 && (
+                <Badge className="ml-2 bg-muted text-muted-foreground text-xs">
+                  {firestoreDoubts.length}
+                </Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger
               value="pending"
               className="rounded-lg"
@@ -971,61 +651,35 @@ export default function TeacherDashboard() {
             >
               Answered
             </TabsTrigger>
-            <TabsTrigger
-              value="all"
-              className="rounded-lg"
-              data-ocid="teacher.tab"
-            >
-              All
-            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="pending" className="mt-4 space-y-3">
-            {pending.length === 0 ? (
+          <TabsContent value={filterTab} className="mt-4 space-y-3">
+            {displayDoubts.length === 0 ? (
               <div
                 className="text-center py-16 text-muted-foreground"
                 data-ocid="teacher.empty_state"
               >
                 <CheckCircle2 className="w-12 h-12 mx-auto mb-3 text-green-300" />
                 <div className="font-medium">
-                  All caught up! No pending doubts. 🎉
+                  {filterTab === "pending"
+                    ? "All caught up! No pending doubts. 🎉"
+                    : "No doubts in this category."}
                 </div>
               </div>
             ) : (
-              pending.map((d) => (
-                <DoubtCard
+              displayDoubts.map((d) => (
+                <FirestoreDoubtCard
                   key={d.id}
                   doubt={d}
-                  expanded={expanded === d.id}
-                  onToggle={() => setExpanded(expanded === d.id ? null : d.id)}
-                  onAnswerSubmit={handleAnswerSubmit}
+                  expanded={expandedId === d.id}
+                  onToggle={() =>
+                    setExpandedId(expandedId === d.id ? null : d.id)
+                  }
+                  teacherName={teacherName}
+                  onAnswered={() => setExpandedId(null)}
                 />
               ))
             )}
-          </TabsContent>
-
-          <TabsContent value="answered" className="mt-4 space-y-3">
-            {answered.map((d) => (
-              <DoubtCard
-                key={d.id}
-                doubt={d}
-                expanded={expanded === d.id}
-                onToggle={() => setExpanded(expanded === d.id ? null : d.id)}
-                onAnswerSubmit={handleAnswerSubmit}
-              />
-            ))}
-          </TabsContent>
-
-          <TabsContent value="all" className="mt-4 space-y-3">
-            {doubts.map((d) => (
-              <DoubtCard
-                key={d.id}
-                doubt={d}
-                expanded={expanded === d.id}
-                onToggle={() => setExpanded(expanded === d.id ? null : d.id)}
-                onAnswerSubmit={handleAnswerSubmit}
-              />
-            ))}
           </TabsContent>
         </Tabs>
 
@@ -1040,8 +694,8 @@ export default function TeacherDashboard() {
             </div>
             <LiveClassForm
               navigate={navigate}
-              teacherName={localProfile?.displayName ?? "Teacher"}
-              userId={localStorage.getItem("userId") ?? ""}
+              teacherName={teacherName}
+              userId={userId}
             />
           </CardContent>
         </Card>
@@ -1054,9 +708,8 @@ export default function TeacherDashboard() {
             </h2>
             <CallStudents
               navigate={navigate}
-              teacherName={localProfile?.displayName ?? "Teacher"}
-              userId={localStorage.getItem("userId") ?? ""}
-              doubts={doubts}
+              teacherName={teacherName}
+              userId={userId}
             />
           </CardContent>
         </Card>
@@ -1064,7 +717,9 @@ export default function TeacherDashboard() {
         <div className="text-center text-xs text-muted-foreground py-6">
           © {new Date().getFullYear()}. Built with ❤️ using{" "}
           <a
-            href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(typeof window !== "undefined" ? window.location.hostname : "")}`}
+            href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(
+              typeof window !== "undefined" ? window.location.hostname : "",
+            )}`}
             target="_blank"
             rel="noreferrer"
             className="underline hover:text-foreground transition-colors"

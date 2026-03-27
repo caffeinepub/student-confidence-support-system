@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { rtdbListen, rtdbPush, rtdbSet } from "./useFirebaseRTDB";
 
 export interface AppNotification {
   id: string;
@@ -11,7 +12,7 @@ export interface AppNotification {
 
 const STORAGE_KEY = "askspark_notifications";
 
-export function getNotifications(): AppNotification[] {
+function getLocalNotifications(): AppNotification[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
@@ -21,61 +22,120 @@ export function getNotifications(): AppNotification[] {
   }
 }
 
+function saveLocalNotifications(list: AppNotification[]): void {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(list.slice(0, 50)));
+}
+
+// Legacy standalone functions (used by some components)
+export function getNotifications(): AppNotification[] {
+  return getLocalNotifications();
+}
+
 export function addNotification(
   n: Omit<AppNotification, "id" | "read" | "createdAt">,
+  userId?: string,
 ): void {
-  const list = getNotifications();
   const entry: AppNotification = {
     ...n,
     id: `notif_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
     read: false,
     createdAt: Date.now(),
   };
-  list.unshift(entry);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(list.slice(0, 50)));
+  if (userId) {
+    try {
+      rtdbPush(`notifications/${userId}`, entry);
+    } catch {
+      /* ignore */
+    }
+  } else {
+    const list = getLocalNotifications();
+    list.unshift(entry);
+    saveLocalNotifications(list);
+  }
 }
 
-export function markAllRead(): void {
-  const list = getNotifications().map((n) => ({ ...n, read: true }));
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+export function markAllRead(userId?: string): void {
+  if (userId) {
+    // We handle this via RTDB in the hook
+  } else {
+    const list = getLocalNotifications().map((n) => ({ ...n, read: true }));
+    saveLocalNotifications(list);
+  }
 }
 
-export function markRead(id: string): void {
-  const list = getNotifications().map((n) =>
-    n.id === id ? { ...n, read: true } : n,
-  );
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+export function markRead(id: string, userId?: string): void {
+  if (userId) {
+    rtdbSet(`notifications/${userId}/${id}/read`, true);
+  } else {
+    const list = getLocalNotifications().map((n) =>
+      n.id === id ? { ...n, read: true } : n,
+    );
+    saveLocalNotifications(list);
+  }
 }
 
-export function useNotifications() {
+export function useNotifications(userId?: string) {
   const [notifications, setNotifications] = useState<AppNotification[]>(() =>
-    getNotifications(),
+    getLocalNotifications(),
   );
+  const unsubRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
-    // Reload on focus
-    function reload() {
-      setNotifications(getNotifications());
+    if (!userId) {
+      // Fallback: reload from localStorage on focus
+      function reload() {
+        setNotifications(getLocalNotifications());
+      }
+      window.addEventListener("focus", reload);
+      return () => window.removeEventListener("focus", reload);
     }
-    window.addEventListener("focus", reload);
-    return () => window.removeEventListener("focus", reload);
-  }, []);
+
+    // Real-time from RTDB
+    unsubRef.current = rtdbListen(`notifications/${userId}`, (value) => {
+      if (!value || typeof value !== "object") {
+        setNotifications([]);
+        return;
+      }
+      const map = value as Record<string, AppNotification>;
+      const list = Object.entries(map)
+        .map(([key, val]) => ({ ...val, id: key }))
+        .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
+        .slice(0, 50);
+      setNotifications(list);
+    });
+
+    return () => {
+      unsubRef.current?.();
+    };
+  }, [userId]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   function handleMarkRead(id: string) {
-    markRead(id);
-    setNotifications(getNotifications());
+    markRead(id, userId);
+    if (!userId) {
+      setNotifications(getLocalNotifications());
+    }
+    // RTDB version: state updates via listener
   }
 
   function handleMarkAllRead() {
-    markAllRead();
-    setNotifications(getNotifications());
+    if (userId) {
+      // Mark all read in RTDB
+      for (const n of notifications) {
+        if (!n.read) rtdbSet(`notifications/${userId}/${n.id}/read`, true);
+      }
+    } else {
+      markAllRead();
+      setNotifications(getLocalNotifications());
+    }
   }
 
   function handleAdd(n: Omit<AppNotification, "id" | "read" | "createdAt">) {
-    addNotification(n);
-    setNotifications(getNotifications());
+    addNotification(n, userId);
+    if (!userId) {
+      setNotifications(getLocalNotifications());
+    }
   }
 
   return {

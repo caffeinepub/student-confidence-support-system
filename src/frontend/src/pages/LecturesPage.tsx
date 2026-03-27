@@ -1,3 +1,4 @@
+import DoubtSearch from "@/components/DoubtSearch";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -193,6 +194,11 @@ export default function LecturesPage() {
           </TabsContent>
 
           <TabsContent value="recorded">
+            {/* Search inside recorded lectures */}
+            <div className="mb-6">
+              <DoubtSearch lecturesOnly />
+            </div>
+
             <div className="grid sm:grid-cols-2 gap-6">
               {RECORDED.map((vid, i) => (
                 <motion.div

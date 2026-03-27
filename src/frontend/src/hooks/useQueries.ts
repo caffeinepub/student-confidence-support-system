@@ -1,6 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Doubt, UserProfile } from "../backend";
 import type { AppRole } from "../backend";
+import {
+  type FirestoreDoubt,
+  answerDoubt as firestoreAnswerDoubt,
+  submitDoubt as firestoreSubmitDoubt,
+  useAllDoubts as useFirestoreAllDoubts,
+  useMyDoubts,
+} from "../lib/useFirestoreDoubts";
 import { useActor } from "./useActor";
 import {
   type LocalProfile,
@@ -16,7 +23,6 @@ export function useUserProfile() {
     queryFn: async () => {
       const profile = loadLocalProfile();
       if (!profile) return null;
-      // Adapt to UserProfile shape expected by the rest of the app
       return {
         displayName: profile.displayName,
         doubtsSubmitted: BigInt(0),
@@ -32,16 +38,13 @@ export function useLocalFullProfile(): LocalProfile | null {
   return loadLocalProfile();
 }
 
-export function useCallerDoubts() {
-  const { actor, isFetching } = useActor();
-  return useQuery<Doubt[]>({
-    queryKey: ["callerDoubts"],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.getCallerDoubts();
-    },
-    enabled: !!actor && !isFetching,
-  });
+export function useCallerDoubts(): {
+  data: FirestoreDoubt[];
+  isLoading: boolean;
+} {
+  const userId = getOrCreateUserId();
+  const doubts = useMyDoubts(userId);
+  return { data: doubts, isLoading: false };
 }
 
 export function useConfidenceScore() {
@@ -56,17 +59,9 @@ export function useConfidenceScore() {
   });
 }
 
-export function useAllDoubts() {
-  const { actor, isFetching } = useActor();
-  return useQuery<Doubt[]>({
-    queryKey: ["allDoubts"],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.getAllDoubts();
-    },
-    enabled: !!actor && !isFetching,
-    refetchInterval: 15_000,
-  });
+export function useAllDoubts(): { data: FirestoreDoubt[]; isLoading: boolean } {
+  const doubts = useFirestoreAllDoubts();
+  return { data: doubts, isLoading: false };
 }
 
 export function useUnansweredDoubts() {
@@ -106,23 +101,40 @@ export function useSubmitDoubt() {
     mutationFn: async (input: DoubtInput) => {
       const userId = getOrCreateUserId();
       const profile = loadLocalProfile();
-      const stored = JSON.parse(
-        localStorage.getItem("askspark_doubts") || "[]",
-      );
-      stored.unshift({
-        id: `local_${Date.now()}`,
-        text: input.text,
-        subject: profile?.userBranch ?? profile?.userClass ?? "",
-        branch: profile?.userBranch ?? profile?.userClass ?? "",
-        isAnonymous: input.isAnonymous,
-        userId,
-        timestamp: Date.now(),
-        isAnswered: false,
-      });
-      localStorage.setItem(
-        "askspark_doubts",
-        JSON.stringify(stored.slice(0, 100)),
-      );
+      const subject = profile?.userBranch ?? profile?.userClass ?? "General";
+      const studentName = profile?.displayName ?? "Anonymous";
+
+      try {
+        await firestoreSubmitDoubt({
+          question: input.text,
+          subject,
+          studentName: input.isAnonymous ? "Anonymous" : studentName,
+          userId,
+          isAnonymous: input.isAnonymous,
+        });
+      } catch {
+        // Final fallback to localStorage
+        const stored = JSON.parse(
+          localStorage.getItem("askspark_doubts") || "[]",
+        );
+        stored.unshift({
+          id: `local_${Date.now()}`,
+          text: input.text,
+          title: input.text,
+          subject,
+          branch: subject,
+          isAnonymous: input.isAnonymous,
+          userId,
+          timestamp: Date.now(),
+          createdAt: Date.now(),
+          status: "pending",
+          studentName: input.isAnonymous ? "Anonymous" : studentName,
+        });
+        localStorage.setItem(
+          "askspark_doubts",
+          JSON.stringify(stored.slice(0, 100)),
+        );
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["callerDoubts"] });
@@ -135,15 +147,30 @@ export function useSubmitDoubt() {
 }
 
 export function useAnswerDoubt() {
-  const { actor } = useActor();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({
       doubtId,
       response,
-    }: { doubtId: string; response: string }) => {
-      if (!actor) throw new Error("Service not available, please try again");
-      return actor.answerDoubt(doubtId, response);
+      teacherName,
+      studentUserId,
+    }: {
+      doubtId: string;
+      response: string;
+      teacherName?: string;
+      studentUserId?: string;
+    }) => {
+      try {
+        await firestoreAnswerDoubt(
+          doubtId,
+          response,
+          teacherName ?? "Teacher",
+          studentUserId,
+        );
+      } catch (err) {
+        console.error("answerDoubt failed:", err);
+        throw err;
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["allDoubts"] });
@@ -170,7 +197,6 @@ export function useSubmitProfile() {
       userClass?: string;
       userBranch?: string;
     }) => {
-      // Save everything to localStorage under a generated userId
       saveLocalProfile({ displayName, role, userType, userClass, userBranch });
       return { displayName, role };
     },

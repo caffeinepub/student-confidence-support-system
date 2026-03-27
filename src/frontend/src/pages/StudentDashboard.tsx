@@ -39,6 +39,9 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { loadLocalProfile } from "../hooks/useLocalProfile";
+import { useNotifications } from "../hooks/useNotifications";
+import { type FirestoreDoubt, useMyDoubts } from "../lib/useFirestoreDoubts";
+import { getRating, submitRating } from "../lib/useFirestoreRatings";
 
 const BADGES = [
   {
@@ -153,14 +156,6 @@ type NotifItem = {
   read: boolean;
 };
 
-type LocalDoubt = {
-  id: string;
-  subject: string;
-  subjectColor: string;
-  title: string;
-  timestamp: number;
-};
-
 type TestHistoryItem = {
   week: number;
   score: number;
@@ -253,6 +248,160 @@ function ActiveLiveClasses({
   );
 }
 
+// ── Firestore Doubt Card for Students ───────────────────────────────────────────
+function FirestoreDoubtStudentCard({
+  doubt,
+  index,
+  expanded,
+  onToggle,
+  studentId,
+}: {
+  doubt: FirestoreDoubt;
+  index: number;
+  expanded: boolean;
+  onToggle: () => void;
+  studentId: string;
+}) {
+  const [localRating, setLocalRating] = useState<number | null>(null);
+  const [ratingSubmitted, setRatingSubmitted] = useState(false);
+
+  // Check if already rated
+  useEffect(() => {
+    if (doubt.status === "answered" && !ratingSubmitted) {
+      getRating(doubt.id, studentId).then((r) => {
+        if (r !== null) {
+          setLocalRating(r);
+          setRatingSubmitted(true);
+        }
+      });
+    }
+  }, [doubt.id, doubt.status, studentId, ratingSubmitted]);
+
+  async function handleRate(stars: number) {
+    if (ratingSubmitted) return;
+    setLocalRating(stars);
+    setRatingSubmitted(true);
+    try {
+      await submitRating(
+        doubt.id,
+        doubt.userId,
+        doubt.teacherName ?? "Teacher",
+        studentId,
+        stars,
+      );
+    } catch {
+      /* ignore */
+    }
+  }
+
+  return (
+    <Card
+      className="glass-card border-white/40 warm-shadow hover:warm-shadow-lg transition-all duration-300"
+      data-ocid={`student.item.${index + 1}`}
+      data-doubt-id={doubt.id}
+    >
+      <CardContent className="p-5">
+        <button
+          type="button"
+          className="flex items-start justify-between gap-3 w-full text-left"
+          onClick={onToggle}
+        >
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap mb-2">
+              <Badge className="bg-primary/10 text-primary border-0 text-xs">
+                {doubt.subject}
+              </Badge>
+              {doubt.status === "answered" ? (
+                <Badge className="text-xs border-0 bg-green-100 text-green-700">
+                  <CheckCircle2 className="w-3 h-3 mr-1" />
+                  Answered
+                </Badge>
+              ) : (
+                <Badge className="text-xs border-0 bg-amber-100 text-amber-700">
+                  <Clock className="w-3 h-3 mr-1" />
+                  Pending
+                </Badge>
+              )}
+            </div>
+            <div className="font-medium text-foreground text-sm truncate">
+              {doubt.question}
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              {doubt.createdAt
+                ? new Date(doubt.createdAt).toLocaleDateString()
+                : ""}
+            </div>
+          </div>
+          {expanded ? (
+            <ChevronUp className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-1" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-1" />
+          )}
+        </button>
+
+        {expanded && (
+          <div className="mt-4 pt-4 border-t border-border animate-fade-in">
+            {doubt.status === "answered" && doubt.answer ? (
+              <div className="space-y-3">
+                <div className="text-xs font-semibold text-green-700 mb-1">
+                  ✅ Teacher's Answer
+                </div>
+                <div className="bg-green-50 border border-green-100 rounded-xl p-4">
+                  <p className="text-sm text-foreground/80 leading-relaxed">
+                    {doubt.answer}
+                  </p>
+                  {doubt.teacherName && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      — {doubt.teacherName}
+                      {doubt.answeredAt
+                        ? `, ${new Date(doubt.answeredAt).toLocaleString()}`
+                        : ""}
+                    </p>
+                  )}
+                </div>
+                {/* Rating */}
+                <div className="mt-3">
+                  <div className="text-xs text-muted-foreground mb-1">
+                    {ratingSubmitted ? "Your rating:" : "Rate this answer:"}
+                  </div>
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => handleRate(star)}
+                        disabled={ratingSubmitted}
+                        className={`text-xl transition-colors ${
+                          star <= (localRating ?? 0)
+                            ? "text-yellow-400"
+                            : "text-gray-300 hover:text-yellow-300"
+                        } ${ratingSubmitted ? "cursor-default" : "cursor-pointer"}`}
+                        data-ocid={`student.rating.${index + 1}`}
+                      >
+                        ★
+                      </button>
+                    ))}
+                  </div>
+                  {ratingSubmitted && (
+                    <p className="text-xs text-green-600 mt-1">
+                      Thanks for your feedback!
+                    </p>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-sm text-amber-600">
+                <Clock className="w-4 h-4" />
+                <span>Waiting for a teacher to answer this doubt</span>
+              </div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function StudentDashboard() {
   const navigate = useNavigate();
   const localProfile = loadLocalProfile();
@@ -265,14 +414,10 @@ export default function StudentDashboard() {
     }
   })();
 
-  // Real doubts from localStorage
-  const [realDoubts, setRealDoubts] = useState<LocalDoubt[]>(() => {
-    try {
-      return JSON.parse(localStorage.getItem("askspark_doubts") || "[]");
-    } catch {
-      return [];
-    }
-  });
+  // Real doubts from Firestore (with localStorage fallback)
+  const userId = localProfile?.userId ?? "";
+  const firestoreDoubts = useMyDoubts(userId);
+  const realDoubts = firestoreDoubts;
 
   // Real test history from localStorage
   const [testHistory, setTestHistory] = useState<TestHistoryItem[]>(() => {
@@ -283,13 +428,10 @@ export default function StudentDashboard() {
     }
   });
 
-  // Reload on focus (in case data changed in another tab)
+  // Reload test history on focus
   useEffect(() => {
     function reloadData() {
       try {
-        setRealDoubts(
-          JSON.parse(localStorage.getItem("askspark_doubts") || "[]"),
-        );
         setTestHistory(
           JSON.parse(localStorage.getItem("askspark_test_history") || "[]"),
         );
@@ -328,11 +470,15 @@ export default function StudentDashboard() {
   const [searchOpen, setSearchOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
-  // Notifications
-  const [notifications, setNotifications] = useState<NotifItem[]>([]);
+  // Notifications (real-time from RTDB)
+  const {
+    notifications: rtdbNotifs,
+    unreadCount,
+    markRead: markReadRTDB,
+    markAllRead: markAllReadRTDB,
+  } = useNotifications(userId);
   const [notifOpen, setNotifOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
-  const unreadCount = notifications.filter((n) => !n.read).length;
 
   // Test history
   const [historyExpanded, setHistoryExpanded] = useState(true);
@@ -358,25 +504,25 @@ export default function StudentDashboard() {
     searchQuery.trim().length > 0
       ? realDoubts.filter(
           (d) =>
-            (d.title ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (d.question ?? "")
+              .toLowerCase()
+              .includes(searchQuery.toLowerCase()) ||
             (d.subject ?? "").toLowerCase().includes(searchQuery.toLowerCase()),
         )
       : [];
 
-  function markRead(id: number) {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
-    );
+  function markRead(id: string | number) {
+    markReadRTDB(String(id));
   }
 
   function markAllRead() {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    markAllReadRTDB();
   }
 
   function handleNotifClick(n: NotifItem) {
-    markRead(n.id);
+    markRead(String(n.id));
     setNotifOpen(false);
-    if (n.type === "doubt_reply") {
+    if (n.type === "doubt_reply" || n.type === "doubt_answered") {
       document
         .getElementById("doubts-section")
         ?.scrollIntoView({ behavior: "smooth" });
@@ -407,7 +553,7 @@ export default function StudentDashboard() {
           </button>
         )}
       </div>
-      {notifications.map((n) => (
+      {(rtdbNotifs as unknown as NotifItem[]).map((n) => (
         <button
           key={n.id}
           type="button"
@@ -424,12 +570,12 @@ export default function StudentDashboard() {
           )}
         </button>
       ))}
-      {notifications.length === 0 && (
+      {rtdbNotifs.length === 0 && (
         <div className="py-6 text-center text-sm text-muted-foreground">
           No notifications yet
         </div>
       )}
-      {notifications.length > 0 && notifications.every((n) => n.read) && (
+      {rtdbNotifs.length > 0 && rtdbNotifs.every((n) => n.read) && (
         <div className="p-4 text-center text-sm text-muted-foreground">
           You're all caught up! 🎉
         </div>
@@ -563,17 +709,19 @@ export default function StudentDashboard() {
                         }}
                       >
                         <div className="flex items-center gap-2">
-                          <Badge
-                            className={`${d.subjectColor || "bg-gray-100 text-gray-700"} border-0 text-xs`}
-                          >
+                          <Badge className="bg-primary/10 text-primary border-0 text-xs">
                             {d.subject}
                           </Badge>
-                          <Badge className="text-xs border-0 bg-amber-100 text-amber-700">
-                            Pending
+                          <Badge
+                            className={`text-xs border-0 ${d.status === "answered" ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}
+                          >
+                            {d.status === "answered"
+                              ? "✅ Answered"
+                              : "⏳ Pending"}
                           </Badge>
                         </div>
                         <div className="text-sm text-foreground mt-1 line-clamp-1">
-                          {d.title}
+                          {d.question}
                         </div>
                       </button>
                     ))
@@ -699,11 +847,11 @@ export default function StudentDashboard() {
                     setSearchQuery("");
                   }}
                 >
-                  <Badge className={`${d.subjectColor} border-0 text-xs`}>
+                  <Badge className="bg-primary/10 text-primary border-0 text-xs">
                     {d.subject}
                   </Badge>
                   <div className="text-sm text-foreground mt-1 line-clamp-1">
-                    {d.title}
+                    {d.question}
                   </div>
                 </button>
               ))}
@@ -1147,61 +1295,18 @@ export default function StudentDashboard() {
               </div>
             ) : (
               realDoubts.map((doubt, i) => (
-                <Card
+                <FirestoreDoubtStudentCard
                   key={doubt.id}
-                  className="glass-card border-white/40 warm-shadow hover:warm-shadow-lg transition-all duration-300"
-                  data-ocid={`student.item.${i + 1}`}
-                  data-doubt-id={doubt.id}
-                >
-                  <CardContent className="p-5">
-                    <button
-                      type="button"
-                      className="flex items-start justify-between gap-3 w-full text-left"
-                      onClick={() =>
-                        setExpandedDoubt(
-                          expandedDoubt === doubt.id ? null : doubt.id,
-                        )
-                      }
-                    >
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap mb-2">
-                          <Badge
-                            className={`${doubt.subjectColor || "bg-gray-100 text-gray-700"} border-0 text-xs`}
-                          >
-                            {doubt.subject}
-                          </Badge>
-                          <Badge className="text-xs border-0 bg-amber-100 text-amber-700">
-                            <Clock className="w-3 h-3 mr-1" />
-                            Pending
-                          </Badge>
-                        </div>
-                        <div className="font-medium text-foreground text-sm truncate">
-                          {doubt.title}
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-1">
-                          {doubt.timestamp
-                            ? new Date(doubt.timestamp).toLocaleDateString()
-                            : ""}
-                        </div>
-                      </div>
-                      {expandedDoubt === doubt.id ? (
-                        <ChevronUp className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-1" />
-                      ) : (
-                        <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-1" />
-                      )}
-                    </button>
-                    {expandedDoubt === doubt.id && (
-                      <div className="mt-4 pt-4 border-t border-border animate-fade-in">
-                        <div className="flex items-center gap-2 text-sm text-amber-600">
-                          <Clock className="w-4 h-4" />
-                          <span>
-                            Waiting for a teacher to answer this doubt
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                  doubt={doubt}
+                  index={i}
+                  expanded={expandedDoubt === doubt.id}
+                  onToggle={() =>
+                    setExpandedDoubt(
+                      expandedDoubt === doubt.id ? null : doubt.id,
+                    )
+                  }
+                  studentId={userId}
+                />
               ))
             )}
           </div>
@@ -1238,7 +1343,7 @@ export default function StudentDashboard() {
               <VideoCallModal
                 open={videoCallDoubt !== null}
                 onClose={() => setVideoCallDoubt(null)}
-                studentName={d?.title?.slice(0, 20) || "Student"}
+                studentName={(d?.question ?? "").slice(0, 20) || "Student"}
                 isTeacher={false}
               />
             );

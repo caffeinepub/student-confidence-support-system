@@ -17,6 +17,7 @@ export interface LocalProfile {
   userBranch?: string;
   profileImageUrl?: string;
   interests?: string[];
+  isTeacherInitialized?: boolean;
 }
 
 /** Returns existing userId or generates a new one */

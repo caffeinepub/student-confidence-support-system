@@ -1,3 +1,5 @@
+import { useTeacherRating } from "../lib/useFirestoreRatings";
+
 const STORAGE_KEY = "askspark_ratings";
 
 type RatingsMap = Record<string, number>;
@@ -32,4 +34,9 @@ export function getAverageRating(): number {
 
 export function getRatingsCount(): number {
   return Object.keys(getRatingsMap()).length;
+}
+
+/** Firebase-backed average rating for a teacher */
+export function useFirebaseRating(teacherName: string) {
+  return useTeacherRating(teacherName);
 }

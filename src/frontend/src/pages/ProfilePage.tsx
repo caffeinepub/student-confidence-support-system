@@ -1,13 +1,30 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Camera, Loader2, Upload, User } from "lucide-react";
+import {
+  ArrowLeft,
+  Camera,
+  Loader2,
+  RefreshCw,
+  Upload,
+  User,
+} from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AppRole } from "../backend";
 import { loadLocalProfile, saveLocalProfile } from "../hooks/useLocalProfile";
+import { saveUserToFirestore } from "../lib/useFirestoreUsers";
+import { isTeacherInitialized, switchRole } from "../lib/useRoleSwitch";
 
 const INTERESTS = ["Maths", "Physics", "Programming", "Electronics", "Biology"];
 
@@ -15,6 +32,8 @@ function getDashboardPath(role?: AppRole): string {
   if (role === AppRole.teacher) return "/dashboard/teacher";
   return "/dashboard/student";
 }
+
+type SwitchStep = "idle" | "confirm" | "teacher-code";
 
 export default function ProfilePage() {
   const navigate = useNavigate();
@@ -39,7 +58,21 @@ export default function ProfilePage() {
 
   const [saving, setSaving] = useState(false);
 
+  // Role switch state
+  const [switchStep, setSwitchStep] = useState<SwitchStep>("idle");
+  const [teacherCode, setTeacherCode] = useState("");
+  const [teacherCodeError, setTeacherCodeError] = useState("");
+  const [switching, setSwitching] = useState(false);
+  // Whether this user has already been a teacher before (requires code on re-switch)
+  const [teacherAlreadyInitialized, setTeacherAlreadyInitialized] = useState(
+    profile?.isTeacherInitialized ?? false,
+  );
+
   const dashboardPath = getDashboardPath(profile?.role);
+  const currentRole = profile?.role ?? AppRole.student;
+  const targetRole: "teacher" | "student" =
+    currentRole === AppRole.teacher ? "student" : "teacher";
+  const targetLabel = targetRole === "teacher" ? "Teacher" : "Student";
 
   const goBack = () => {
     navigate({ to: dashboardPath });
@@ -120,7 +153,6 @@ export default function ProfilePage() {
       setProfileImageUrl(dataUrl);
     };
     reader.readAsDataURL(file);
-    // reset so same file can be re-selected
     e.target.value = "";
   };
 
@@ -140,14 +172,22 @@ export default function ProfilePage() {
     }
     setSaving(true);
     try {
-      saveLocalProfile({
+      const saved = saveLocalProfile({
         ...profile,
         displayName: displayName.trim(),
         interests,
         profileImageUrl,
       });
+      try {
+        await saveUserToFirestore(
+          saved.userId,
+          saved.displayName,
+          saved.role as string,
+        );
+      } catch {
+        /* ignore */
+      }
       toast.success("Profile saved!");
-      // Redirect to dashboard after saving
       setTimeout(() => {
         navigate({ to: dashboardPath });
       }, 800);
@@ -156,6 +196,85 @@ export default function ProfilePage() {
       toast.error("Failed to save profile");
     } finally {
       setSaving(false);
+    }
+  };
+
+  // Role switch handlers
+  const handleSwitchClick = async () => {
+    if (targetRole === "teacher") {
+      // Check if this user has previously been a teacher (needs code on re-switch)
+      const alreadyInit =
+        teacherAlreadyInitialized ||
+        (profile ? await isTeacherInitialized(profile.userId) : false);
+      setTeacherAlreadyInitialized(alreadyInit);
+
+      if (alreadyInit) {
+        // Already been a teacher before — show confirm then optional code
+        setSwitchStep("confirm");
+      } else {
+        // First time switching to teacher — skip code, go straight to confirm
+        setSwitchStep("confirm");
+      }
+    } else {
+      // Switching to student — just confirm
+      setSwitchStep("confirm");
+    }
+  };
+
+  const handleConfirmContinue = () => {
+    if (targetRole === "teacher" && teacherAlreadyInitialized) {
+      // Already been a teacher — ask for code as security check
+      setTeacherCode("");
+      setTeacherCodeError("");
+      setSwitchStep("teacher-code");
+    } else {
+      // First time teacher OR switching to student — allow directly
+      performSwitch(targetRole, undefined);
+    }
+  };
+
+  const handleCancelSwitch = () => {
+    setSwitchStep("idle");
+    setTeacherCode("");
+    setTeacherCodeError("");
+  };
+
+  const handleTeacherCodeSubmit = async () => {
+    await performSwitch("teacher", teacherCode);
+  };
+
+  const performSwitch = async (
+    role: "student" | "teacher",
+    code: string | undefined,
+  ) => {
+    if (!profile) return;
+    setSwitching(true);
+    setTeacherCodeError("");
+    try {
+      const result = await switchRole(profile.userId, role, code);
+      if (!result.success) {
+        setTeacherCodeError(result.error ?? "Switch failed.");
+        setSwitching(false);
+        return;
+      }
+      // If this was first-time teacher switch, mark initialized
+      if (role === "teacher" && !teacherAlreadyInitialized) {
+        setTeacherAlreadyInitialized(true);
+      }
+      setSwitchStep("idle");
+      toast.success(
+        `Role switched to ${role === "teacher" ? "Teacher" : "Student"}!`,
+      );
+      setTimeout(() => {
+        navigate({
+          to: role === "teacher" ? "/dashboard/teacher" : "/dashboard/student",
+        });
+      }, 600);
+    } catch (err) {
+      console.error(err);
+      setTeacherCodeError("Something went wrong. Please try again.");
+    } finally {
+      setSwitching(false);
     }
   };
 
@@ -200,7 +319,6 @@ export default function ProfilePage() {
             Profile Photo
           </h2>
 
-          {/* Avatar preview */}
           <div className="flex flex-col items-center gap-4">
             <div
               className="w-28 h-28 rounded-full overflow-hidden shadow-lg border-4 border-white/60"
@@ -250,7 +368,6 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Camera error */}
           {cameraError && (
             <p
               className="text-sm text-destructive text-center"
@@ -260,7 +377,6 @@ export default function ProfilePage() {
             </p>
           )}
 
-          {/* Camera section */}
           {cameraOpen && (
             <div className="space-y-3 border border-border rounded-xl p-4 bg-muted/30">
               <canvas ref={canvasRef} className="hidden" />
@@ -344,7 +460,6 @@ export default function ProfilePage() {
             />
           </div>
 
-          {/* Role / class info — read-only */}
           <div className="flex flex-wrap gap-2">
             <Badge className="bg-primary/10 text-primary border-primary/20 capitalize">
               {profile.role}
@@ -389,6 +504,48 @@ export default function ProfilePage() {
           </div>
         )}
 
+        {/* Switch Role Card */}
+        <div className="glass-card rounded-2xl p-6 warm-shadow space-y-4">
+          <div className="flex items-center gap-2">
+            <RefreshCw className="w-4 h-4 text-primary" />
+            <h2 className="font-display font-semibold text-base text-foreground">
+              Switch Role
+            </h2>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Current role</p>
+              <Badge
+                className={`capitalize ${
+                  currentRole === AppRole.teacher
+                    ? "bg-amber-100 text-amber-800 border-amber-200"
+                    : "bg-blue-100 text-blue-800 border-blue-200"
+                }`}
+              >
+                {currentRole === AppRole.teacher
+                  ? "👨‍🏫 Teacher"
+                  : "🎓 Student"}
+              </Badge>
+            </div>
+            <Button
+              variant="outline"
+              onClick={handleSwitchClick}
+              className="gap-2 min-h-[44px] border-primary/30 text-primary hover:bg-primary/5"
+              data-ocid="profile.toggle"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Switch to {targetLabel}
+            </Button>
+          </div>
+
+          <p className="text-xs text-muted-foreground">
+            {teacherAlreadyInitialized && targetRole === "teacher"
+              ? "Re-switching to Teacher requires your teacher code for security."
+              : "Switching roles won't delete any of your data. Your doubts and activity will be preserved."}
+          </p>
+        </div>
+
         {/* Save button */}
         <Button
           onClick={handleSave}
@@ -406,9 +563,146 @@ export default function ProfilePage() {
           )}
         </Button>
 
-        {/* Footer spacing */}
         <div className="h-8" />
       </main>
+
+      {/* Step 1: Confirmation Dialog */}
+      <Dialog
+        open={switchStep === "confirm"}
+        onOpenChange={(open) => {
+          if (!open) handleCancelSwitch();
+        }}
+      >
+        <DialogContent
+          className="sm:max-w-md rounded-2xl"
+          data-ocid="role_switch.dialog"
+        >
+          <DialogHeader>
+            <DialogTitle>Switch Role</DialogTitle>
+            <DialogDescription asChild>
+              <div className="space-y-2 pt-1">
+                <p>
+                  Are you sure you want to switch to{" "}
+                  <strong>{targetLabel}</strong> mode?
+                </p>
+                {targetRole === "teacher" && !teacherAlreadyInitialized && (
+                  <p className="text-xs text-green-700 bg-green-50 rounded-lg px-3 py-2 border border-green-200">
+                    First time switching to Teacher — no code required!
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Your existing data will be preserved. You'll be redirected to
+                  the appropriate dashboard.
+                </p>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-2 sm:gap-2">
+            <Button
+              variant="outline"
+              onClick={handleCancelSwitch}
+              className="flex-1"
+              data-ocid="role_switch.cancel_button"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleConfirmContinue}
+              disabled={switching}
+              className="flex-1 gradient-primary text-white border-0"
+              data-ocid="role_switch.confirm_button"
+            >
+              {switching ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Switching…
+                </>
+              ) : (
+                "Continue"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Step 2: Teacher Code Dialog (only for re-switching) */}
+      <Dialog
+        open={switchStep === "teacher-code"}
+        onOpenChange={(open) => {
+          if (!open) handleCancelSwitch();
+        }}
+      >
+        <DialogContent
+          className="sm:max-w-md rounded-2xl"
+          data-ocid="role_switch.dialog"
+        >
+          <DialogHeader>
+            <DialogTitle>Enter Teacher Code</DialogTitle>
+            <DialogDescription>
+              You've been a teacher before. Enter your teacher code to switch
+              back to Teacher mode.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="teacher-code" className="text-sm">
+                Teacher Code
+              </Label>
+              <Input
+                id="teacher-code"
+                type="password"
+                placeholder="Enter teacher code"
+                value={teacherCode}
+                onChange={(e) => {
+                  setTeacherCode(e.target.value);
+                  setTeacherCodeError("");
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleTeacherCodeSubmit();
+                }}
+                className="h-11 rounded-xl"
+                data-ocid="role_switch.input"
+              />
+            </div>
+            {teacherCodeError && (
+              <p
+                className="text-sm text-destructive"
+                data-ocid="role_switch.error_state"
+              >
+                {teacherCodeError}
+              </p>
+            )}
+          </div>
+
+          <DialogFooter className="flex gap-2 sm:gap-2">
+            <Button
+              variant="outline"
+              onClick={handleCancelSwitch}
+              disabled={switching}
+              className="flex-1"
+              data-ocid="role_switch.cancel_button"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleTeacherCodeSubmit}
+              disabled={switching || !teacherCode.trim()}
+              className="flex-1 gradient-primary text-white border-0"
+              data-ocid="role_switch.confirm_button"
+            >
+              {switching ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Switching…
+                </>
+              ) : (
+                "Confirm Switch"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

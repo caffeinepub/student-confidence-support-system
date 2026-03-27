@@ -12,6 +12,7 @@ import { AppRole } from "./backend";
 import CallManager from "./components/CallManager";
 import PageSkeleton from "./components/PageSkeleton";
 import { loadLocalProfile } from "./hooks/useLocalProfile";
+import { useRoleSync } from "./hooks/useRoleSync";
 
 const LandingPage = lazy(() => import("./pages/LandingPage"));
 const OnboardingPage = lazy(() => import("./pages/OnboardingPage"));
@@ -32,9 +33,15 @@ const VideoCallPage = lazy(() => import("./pages/VideoCallPage"));
 const LiveClassPage = lazy(() => import("./pages/LiveClassPage"));
 const AdminPanel = lazy(() => import("./pages/AdminPanel"));
 
+function RoleSyncManager() {
+  useRoleSync();
+  return null;
+}
+
 const rootRoute = createRootRoute({
   component: () => (
     <>
+      <RoleSyncManager />
       <CallManager />
       <Outlet />
       <Toaster richColors position="top-right" />

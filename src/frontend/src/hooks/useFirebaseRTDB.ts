@@ -1,13 +1,15 @@
 /**
- * useFirebaseRTDB — localStorage + BroadcastChannel-based RTDB simulation.
- * Provides the same API surface expected by WebRTC signaling and live class
- * features, but works entirely in-browser without a backend.
+ * useFirebaseRTDB — Real Firebase RTDB with localStorage/BroadcastChannel fallback.
+ * Keeps the same API surface so WebRTC, live class, and chat features continue working.
  */
+
+import { get, onValue, push, ref, remove, set } from "firebase/database";
+import { rtdb } from "../lib/firebase";
+
+// ── Fallback helpers (BroadcastChannel + localStorage) ────────────────────
 
 const BC_CHANNEL = "askspark_rtdb";
 const STORE_KEY = "askspark_rtdb_store";
-
-// ── helpers ────────────────────────────────────────────────────────────────
 
 function getStore(): Record<string, unknown> {
   try {
@@ -57,67 +59,57 @@ function removeAtPath(obj: Record<string, unknown>, parts: string[]): void {
   delete cur[parts[parts.length - 1]];
 }
 
-function broadcast(path: string) {
+function broadcastLocal(path: string) {
   try {
     const bc = new BroadcastChannel(BC_CHANNEL);
     bc.postMessage({ path });
     bc.close();
   } catch {
-    // BroadcastChannel not available in some envs
     window.dispatchEvent(new CustomEvent("rtdb_change", { detail: { path } }));
   }
 }
 
-// ── public API ─────────────────────────────────────────────────────────────
-
-export function rtdbSet(path: string, data: unknown): void {
+function fallbackSet(path: string, data: unknown): void {
   const store = getStore();
   const parts = path.split("/").filter(Boolean);
   setAtPath(store, parts, data);
   setStore(store);
-  broadcast(path);
+  broadcastLocal(path);
 }
 
-export function rtdbPush(path: string, data: unknown): string {
+function fallbackPush(path: string, data: unknown): string {
   const id = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
   const store = getStore();
   const parts = [...path.split("/").filter(Boolean), id];
   setAtPath(store, parts, data);
   setStore(store);
-  broadcast(`${path}/${id}`);
+  broadcastLocal(`${path}/${id}`);
   return id;
 }
 
-export function rtdbGet(path: string): unknown {
+function fallbackGet(path: string): unknown {
   const store = getStore();
   const parts = path.split("/").filter(Boolean);
   return getAtPath(store, parts);
 }
 
-export function rtdbRemove(path: string): void {
+function fallbackRemove(path: string): void {
   const store = getStore();
   const parts = path.split("/").filter(Boolean);
   removeAtPath(store, parts);
   setStore(store);
-  broadcast(path);
+  broadcastLocal(path);
 }
 
-/**
- * Subscribe to a path. Returns an unsubscribe function.
- * Fires immediately with the current value, then on every change.
- */
-export function rtdbListen(
+function fallbackListen(
   path: string,
   callback: (value: unknown) => void,
 ): () => void {
   const parts = path.split("/").filter(Boolean);
-
   const read = () => {
     const store = getStore();
     return getAtPath(store, parts);
   };
-
-  // fire immediately
   callback(read());
 
   const handleChange = (e: MessageEvent | CustomEvent) => {
@@ -127,7 +119,6 @@ export function rtdbListen(
     } else {
       changedPath = (e as CustomEvent).detail?.path ?? "";
     }
-    // Only fire if the changed path overlaps with the listened path
     if (
       changedPath.startsWith(path) ||
       path.startsWith(changedPath.split("/").slice(0, parts.length).join("/"))
@@ -152,4 +143,69 @@ export function rtdbListen(
       window.removeEventListener("rtdb_change", handleChange as EventListener);
     }
   };
+}
+
+// ── Public API ─────────────────────────────────────────────────────────────
+
+export function rtdbSet(path: string, data: unknown): void {
+  try {
+    set(ref(rtdb, path), data).catch(() => fallbackSet(path, data));
+  } catch {
+    fallbackSet(path, data);
+  }
+}
+
+export function rtdbPush(path: string, data: unknown): string {
+  try {
+    const newRef = push(ref(rtdb, path), data);
+    return newRef.key ?? fallbackPush(path, data);
+  } catch {
+    return fallbackPush(path, data);
+  }
+}
+
+/**
+ * Synchronous get — reads from localStorage fallback (for legacy callers).
+ * Use rtdbGetAsync for Firebase-backed async reads.
+ */
+export function rtdbGet(path: string): unknown {
+  // Best-effort: try to return from localStorage fallback
+  // Real-time data should use rtdbListen instead
+  return fallbackGet(path);
+}
+
+/**
+ * Async get — reads from Firebase RTDB with localStorage fallback.
+ */
+export async function rtdbGetAsync(path: string): Promise<unknown> {
+  try {
+    const snap = await get(ref(rtdb, path));
+    return snap.val();
+  } catch {
+    return fallbackGet(path);
+  }
+}
+
+export function rtdbRemove(path: string): void {
+  try {
+    remove(ref(rtdb, path)).catch(() => fallbackRemove(path));
+  } catch {
+    fallbackRemove(path);
+  }
+}
+
+export function rtdbListen(
+  path: string,
+  callback: (value: unknown) => void,
+): () => void {
+  try {
+    const unsubscribe = onValue(
+      ref(rtdb, path),
+      (snap) => callback(snap.val()),
+      () => fallbackListen(path, callback),
+    );
+    return unsubscribe;
+  } catch {
+    return fallbackListen(path, callback);
+  }
 }
