@@ -16,6 +16,7 @@ import {
   Camera,
   Eye,
   EyeOff,
+  KeyRound,
   Loader2,
   RefreshCw,
   Upload,
@@ -30,6 +31,7 @@ import {
   isTeacherInitialized,
   saveTeacherCode,
   switchRole,
+  verifyTeacherCode,
 } from "../lib/useRoleSwitch";
 
 const INTERESTS = ["Maths", "Physics", "Programming", "Electronics", "Biology"];
@@ -44,7 +46,8 @@ type SwitchStep =
   | "confirm"
   | "teacher-code"
   | "create-teacher-code"
-  | "reset-teacher-code";
+  | "reset-teacher-code"
+  | "change-teacher-code";
 
 export default function ProfilePage() {
   const navigate = useNavigate();
@@ -75,6 +78,7 @@ export default function ProfilePage() {
   const [showCode, setShowCode] = useState(false);
   const [teacherCodeError, setTeacherCodeError] = useState("");
   const [switching, setSwitching] = useState(false);
+  const [handling, setHandling] = useState(false);
   const [teacherAlreadyInitialized, setTeacherAlreadyInitialized] = useState(
     profile?.isTeacherInitialized ?? false,
   );
@@ -85,6 +89,9 @@ export default function ProfilePage() {
   const [showNewCode, setShowNewCode] = useState(false);
   const [codeSetupError, setCodeSetupError] = useState("");
   const [savingCode, setSavingCode] = useState(false);
+
+  // Change teacher code state (from profile page, without switch flow)
+  const [currentCode, setCurrentCode] = useState("");
 
   const dashboardPath = getDashboardPath(profile?.role);
   const currentRole = profile?.role ?? AppRole.student;
@@ -215,17 +222,24 @@ export default function ProfilePage() {
     setCodeSetupError("");
     setShowCode(false);
     setShowNewCode(false);
+    setCurrentCode("");
   };
 
   const handleSwitchClick = async () => {
-    if (targetRole === "teacher") {
-      const alreadyInit =
-        teacherAlreadyInitialized ||
-        (profile ? await isTeacherInitialized(profile.userId) : false);
-      setTeacherAlreadyInitialized(alreadyInit);
-      setSwitchStep("confirm");
-    } else {
-      setSwitchStep("confirm");
+    if (handling || switching) return;
+    setHandling(true);
+    try {
+      if (targetRole === "teacher") {
+        const alreadyInit =
+          teacherAlreadyInitialized ||
+          (profile ? await isTeacherInitialized(profile.userId) : false);
+        setTeacherAlreadyInitialized(alreadyInit);
+        setSwitchStep("confirm");
+      } else {
+        setSwitchStep("confirm");
+      }
+    } finally {
+      setHandling(false);
     }
   };
 
@@ -258,15 +272,18 @@ export default function ProfilePage() {
     if (!profile) return;
     setSavingCode(true);
     setCodeSetupError("");
+    // Safety timeout — stop loading no matter what after 5s
+    const safetyTimer = setTimeout(() => setSavingCode(false), 5000);
     try {
       await saveTeacherCode(profile.userId, newCode.trim());
       setTeacherAlreadyInitialized(true);
-      // Now perform the actual switch (no code validation needed — just created it)
+      clearTimeout(safetyTimer);
       await performSwitch("teacher", undefined);
     } catch (err) {
       console.error(err);
       setCodeSetupError("Failed to save code. Please try again.");
     } finally {
+      clearTimeout(safetyTimer);
       setSavingCode(false);
     }
   };
@@ -295,14 +312,60 @@ export default function ProfilePage() {
     if (!profile) return;
     setSavingCode(true);
     setCodeSetupError("");
+    const safetyTimer = setTimeout(() => setSavingCode(false), 5000);
     try {
       await saveTeacherCode(profile.userId, newCode.trim());
+      clearTimeout(safetyTimer);
       toast.success("Teacher code updated! You can now switch to Teacher.");
       resetSwitchState();
     } catch (err) {
       console.error(err);
       setCodeSetupError("Failed to update code. Please try again.");
     } finally {
+      clearTimeout(safetyTimer);
+      setSavingCode(false);
+    }
+  };
+
+  // ---- Change Teacher Code (from profile, without switch flow) ----
+  const handleChangeCodeClick = () => {
+    setCurrentCode("");
+    setNewCode("");
+    setConfirmCode("");
+    setCodeSetupError("");
+    setShowCode(false);
+    setShowNewCode(false);
+    setSwitchStep("change-teacher-code");
+  };
+
+  const handleChangeCodeSubmit = async () => {
+    if (!profile) return;
+    setSavingCode(true);
+    setCodeSetupError("");
+    const safetyTimer = setTimeout(() => setSavingCode(false), 5000);
+    try {
+      const valid = await verifyTeacherCode(profile.userId, currentCode.trim());
+      if (!valid) {
+        setCodeSetupError("Current code is incorrect.");
+        return;
+      }
+      if (newCode.trim().length < 6) {
+        setCodeSetupError("New code must be at least 6 characters.");
+        return;
+      }
+      if (newCode !== confirmCode) {
+        setCodeSetupError("New codes do not match.");
+        return;
+      }
+      await saveTeacherCode(profile.userId, newCode.trim());
+      clearTimeout(safetyTimer);
+      toast.success("Teacher code updated successfully!");
+      resetSwitchState();
+    } catch (err) {
+      console.error(err);
+      setCodeSetupError("Failed to update code. Please try again.");
+    } finally {
+      clearTimeout(safetyTimer);
       setSavingCode(false);
     }
   };
@@ -314,26 +377,25 @@ export default function ProfilePage() {
     if (!profile) return;
     setSwitching(true);
     setTeacherCodeError("");
+    const safetyTimer = setTimeout(() => setSwitching(false), 8000);
     try {
       const result = await switchRole(profile.userId, role, code);
       if (!result.success) {
         setTeacherCodeError(result.error ?? "Switch failed.");
-        setSwitching(false);
         return;
       }
       resetSwitchState();
       toast.success(
         `Role switched to ${role === "teacher" ? "Teacher" : "Student"}!`,
       );
-      setTimeout(() => {
-        navigate({
-          to: role === "teacher" ? "/dashboard/teacher" : "/dashboard/student",
-        });
-      }, 600);
+      navigate({
+        to: role === "teacher" ? "/dashboard/teacher" : "/dashboard/student",
+      });
     } catch (err) {
       console.error(err);
       setTeacherCodeError("Something went wrong. Please try again.");
     } finally {
+      clearTimeout(safetyTimer);
       setSwitching(false);
     }
   };
@@ -500,7 +562,11 @@ export default function ProfilePage() {
           </div>
           <div className="flex flex-wrap gap-2">
             <Badge
-              className={`capitalize ${currentRole === AppRole.teacher ? "bg-amber-100 text-amber-800 border-amber-200" : "bg-blue-100 text-blue-800 border-blue-200"}`}
+              className={`capitalize ${
+                currentRole === AppRole.teacher
+                  ? "bg-amber-100 text-amber-800 border-amber-200"
+                  : "bg-blue-100 text-blue-800 border-blue-200"
+              }`}
             >
               {currentRole === AppRole.teacher ? "👨‍🏫 Teacher" : "🎓 Student"}
             </Badge>
@@ -555,7 +621,11 @@ export default function ProfilePage() {
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Current role</p>
               <Badge
-                className={`capitalize ${currentRole === AppRole.teacher ? "bg-amber-100 text-amber-800 border-amber-200" : "bg-blue-100 text-blue-800 border-blue-200"}`}
+                className={`capitalize ${
+                  currentRole === AppRole.teacher
+                    ? "bg-amber-100 text-amber-800 border-amber-200"
+                    : "bg-blue-100 text-blue-800 border-blue-200"
+                }`}
               >
                 {currentRole === AppRole.teacher
                   ? "👨‍🏫 Teacher"
@@ -565,6 +635,7 @@ export default function ProfilePage() {
             <Button
               variant="outline"
               onClick={handleSwitchClick}
+              disabled={handling || switching}
               className="gap-2 min-h-[44px] border-primary/30 text-primary hover:bg-primary/5"
             >
               <RefreshCw className="w-4 h-4" />
@@ -580,10 +651,40 @@ export default function ProfilePage() {
           </p>
         </div>
 
+        {/* Change Teacher Code (teachers only) */}
+        {!isStudent && (
+          <div
+            className="glass-card rounded-2xl p-6 warm-shadow space-y-4"
+            data-ocid="teacher_code.card"
+          >
+            <div className="flex items-center gap-2">
+              <KeyRound className="w-4 h-4 text-primary" />
+              <h2 className="font-display font-semibold text-base text-foreground">
+                Teacher Code
+              </h2>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-sm text-muted-foreground">
+                Update your personal teacher code anytime.
+              </p>
+              <Button
+                variant="outline"
+                onClick={handleChangeCodeClick}
+                data-ocid="teacher_code.open_modal_button"
+                className="gap-2 min-h-[44px] border-primary/30 text-primary hover:bg-primary/5 shrink-0"
+              >
+                <KeyRound className="w-4 h-4" />
+                Change Code
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Save */}
         <Button
           onClick={handleSave}
           disabled={saving}
+          data-ocid="profile.submit_button"
           className="w-full gradient-primary text-white border-0 shadow-primary font-semibold h-12 rounded-xl"
         >
           {saving ? (
@@ -925,6 +1026,145 @@ export default function ProfilePage() {
                 </>
               ) : (
                 "Reset Code"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog: Change Teacher Code (from profile, no switch) */}
+      <Dialog
+        open={switchStep === "change-teacher-code"}
+        onOpenChange={(open) => {
+          if (!open) resetSwitchState();
+        }}
+      >
+        <DialogContent
+          className="sm:max-w-md rounded-2xl"
+          data-ocid="teacher_code.dialog"
+        >
+          <DialogHeader>
+            <DialogTitle>🔑 Change Teacher Code</DialogTitle>
+            <DialogDescription>
+              Enter your current code to verify, then set a new one.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            {/* Current code */}
+            <div className="space-y-2">
+              <Label htmlFor="current-code" className="text-sm">
+                Current Teacher Code
+              </Label>
+              <div className="relative">
+                <Input
+                  id="current-code"
+                  type={showCode ? "text" : "password"}
+                  placeholder="Enter your current code"
+                  value={currentCode}
+                  onChange={(e) => {
+                    setCurrentCode(e.target.value);
+                    setCodeSetupError("");
+                  }}
+                  data-ocid="teacher_code.input"
+                  className="h-11 rounded-xl pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCode((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                >
+                  {showCode ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+            {/* New code */}
+            <div className="space-y-2">
+              <Label htmlFor="change-new-code" className="text-sm">
+                New Teacher Code
+              </Label>
+              <div className="relative">
+                <Input
+                  id="change-new-code"
+                  type={showNewCode ? "text" : "password"}
+                  placeholder="Min. 6 characters"
+                  value={newCode}
+                  onChange={(e) => {
+                    setNewCode(e.target.value);
+                    setCodeSetupError("");
+                  }}
+                  className="h-11 rounded-xl pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewCode((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                >
+                  {showNewCode ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+            {/* Confirm new code */}
+            <div className="space-y-2">
+              <Label htmlFor="change-confirm-code" className="text-sm">
+                Confirm New Code
+              </Label>
+              <Input
+                id="change-confirm-code"
+                type={showNewCode ? "text" : "password"}
+                placeholder="Re-enter new code"
+                value={confirmCode}
+                onChange={(e) => {
+                  setConfirmCode(e.target.value);
+                  setCodeSetupError("");
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleChangeCodeSubmit();
+                }}
+                className="h-11 rounded-xl"
+              />
+            </div>
+            {codeSetupError && (
+              <p
+                className="text-sm text-destructive"
+                data-ocid="teacher_code.error_state"
+              >
+                {codeSetupError}
+              </p>
+            )}
+          </div>
+          <DialogFooter className="flex gap-2 sm:gap-2">
+            <Button
+              variant="outline"
+              onClick={resetSwitchState}
+              disabled={savingCode}
+              data-ocid="teacher_code.cancel_button"
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleChangeCodeSubmit}
+              disabled={
+                savingCode || !currentCode.trim() || !newCode || !confirmCode
+              }
+              data-ocid="teacher_code.submit_button"
+              className="flex-1 gradient-primary text-white border-0"
+            >
+              {savingCode ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Saving…
+                </>
+              ) : (
+                "Update Code"
               )}
             </Button>
           </DialogFooter>

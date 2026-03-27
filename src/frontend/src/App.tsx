@@ -57,6 +57,10 @@ const indexRoute = createRoute({
 const onboardingRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/onboarding",
+  validateSearch: (search: Record<string, unknown>): { role?: string } => {
+    const role = search.role as string | undefined;
+    return role ? { role } : {};
+  },
   component: OnboardingPage,
 });
 const submitRoute = createRoute({
@@ -143,6 +147,12 @@ const supportRoute = createRoute({
 const videoCallRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/call/$callId",
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { role?: string; callType?: string } => ({
+    role: (search.role as string) ?? undefined,
+    callType: (search.callType as string) ?? undefined,
+  }),
   component: VideoCallPage,
 });
 

@@ -1,4 +1,4 @@
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { AppRole } from "../backend";
 import { loadLocalProfile, saveLocalProfile } from "../hooks/useLocalProfile";
 import { db } from "./firebase";
@@ -46,15 +46,17 @@ export async function saveTeacherCode(
   userId: string,
   code: string,
 ): Promise<void> {
-  try {
-    await updateDoc(doc(db, "users", userId), {
+  // Use setDoc with merge so it works even if the document doesn't exist yet
+  await setDoc(
+    doc(db, "users", userId),
+    {
       teacherCode: code,
       isTeacherInitialized: true,
-    });
-  } catch {
-    /* ignore network errors */
-  }
-  // Also cache locally (never display this — only for fast validation fallback)
+    },
+    { merge: true },
+  );
+
+  // Cache locally for fast offline fallback
   try {
     const profile = loadLocalProfile();
     if (profile) {
@@ -91,6 +93,17 @@ export async function validateTeacherCode(
   return false;
 }
 
+/**
+ * Verify a teacher code — alias for validateTeacherCode.
+ * Used when changing the code from the Profile page.
+ */
+export async function verifyTeacherCode(
+  userId: string,
+  enteredCode: string,
+): Promise<boolean> {
+  return validateTeacherCode(userId, enteredCode);
+}
+
 export async function switchRole(
   userId: string,
   newRole: "student" | "teacher",
@@ -125,12 +138,17 @@ export async function switchRole(
   localStorage.setItem("askspark_role", newRole);
 
   try {
-    await saveUserToFirestore(
-      userId,
-      profile.displayName,
-      newRole,
-      isFirstTimeTeacher,
-    );
+    await Promise.race([
+      saveUserToFirestore(
+        userId,
+        profile.displayName,
+        newRole,
+        isFirstTimeTeacher,
+      ),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("timeout")), 5000),
+      ),
+    ]);
   } catch {
     /* best-effort */
   }

@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { BookOpen, GraduationCap, Loader2, School, Users } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
@@ -32,6 +32,7 @@ import { saveUserToFirestore } from "../lib/useFirestoreUsers";
 
 export default function OnboardingPage() {
   const navigate = useNavigate();
+  const search = useSearch({ from: "/onboarding" });
   const [step, setStep] = useState<1 | 2>(1);
   const [displayName, setDisplayName] = useState("");
   const [role, setRole] = useState<AppRole | null>(null);
@@ -42,6 +43,12 @@ export default function OnboardingPage() {
 
   const { data: existingProfile, isLoading: isProfileLoading } =
     useUserProfile();
+
+  useEffect(() => {
+    if (search?.role === "teacher") {
+      setRole(AppRole.teacher);
+    }
+  }, [search?.role]);
 
   useEffect(() => {
     if (isProfileLoading) return;

@@ -405,7 +405,6 @@ function FirestoreDoubtStudentCard({
 export default function StudentDashboard() {
   const navigate = useNavigate();
   const localProfile = loadLocalProfile();
-  const [premiumOpen, setPremiumOpen] = useState(false);
   const classesAttended = (() => {
     try {
       return Number(localStorage.getItem("askspark_attended_classes") ?? "0");
@@ -892,14 +891,6 @@ export default function StudentDashboard() {
                   Your Progress
                 </h2>
               </div>
-              <button
-                type="button"
-                className="text-xs bg-gradient-to-r from-amber-400 to-orange-400 text-white px-3 py-1.5 rounded-full font-semibold hover:opacity-90 transition-opacity flex items-center gap-1"
-                onClick={() => setPremiumOpen(true)}
-                data-ocid="student.premium.button"
-              >
-                ✨ Go Premium
-              </button>
             </div>
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div className="bg-muted/40 rounded-xl p-3 text-center">
@@ -1349,73 +1340,6 @@ export default function StudentDashboard() {
             );
           })()}
       </main>
-
-      {/* Premium Dialog */}
-      <Dialog open={premiumOpen} onOpenChange={setPremiumOpen}>
-        <DialogContent className="max-w-sm" data-ocid="student.premium.dialog">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-center">
-              ✨ AskSpark Premium
-            </DialogTitle>
-            <DialogDescription className="text-center text-sm mt-1">
-              Unlock advanced features for a better learning experience
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3 mt-2">
-            {[
-              {
-                icon: "⚡",
-                title: "Priority Doubt Answers",
-                desc: "Get answers 3x faster from teachers",
-              },
-              {
-                icon: "💬",
-                title: "Faster Teacher Response",
-                desc: "Direct access to top educators",
-              },
-              {
-                icon: "📊",
-                title: "Advanced Analytics",
-                desc: "Deep insights into your learning patterns",
-              },
-              {
-                icon: "🏆",
-                title: "Exclusive Badges",
-                desc: "Premium profile badges & rewards",
-              },
-            ].map((f) => (
-              <div
-                key={f.title}
-                className="flex items-start gap-3 p-3 rounded-xl bg-muted/40"
-              >
-                <span className="text-xl">{f.icon}</span>
-                <div>
-                  <div className="font-semibold text-sm">{f.title}</div>
-                  <div className="text-xs text-muted-foreground">{f.desc}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="mt-4 p-3 rounded-xl bg-amber-50 border border-amber-200 text-center">
-            <span className="text-amber-700 font-semibold text-sm">
-              🚀 Coming Soon
-            </span>
-            <p className="text-xs text-amber-600 mt-0.5">
-              We are working on Premium. Stay tuned!
-            </p>
-          </div>
-          <DialogFooter>
-            <button
-              type="button"
-              className="w-full py-2 rounded-xl bg-gradient-to-r from-amber-400 to-orange-400 text-white font-semibold text-sm hover:opacity-90 transition-opacity"
-              onClick={() => setPremiumOpen(false)}
-              data-ocid="student.premium.close_button"
-            >
-              Got It!
-            </button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Active Live Classes */}
       <ActiveLiveClasses navigate={navigate} />

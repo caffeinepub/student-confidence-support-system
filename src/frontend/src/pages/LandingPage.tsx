@@ -29,7 +29,9 @@ import {
 } from "lucide-react";
 import { AppRole } from "../backend";
 import Header from "../components/Header";
+import { loadLocalProfile, saveLocalProfile } from "../hooks/useLocalProfile";
 import { useUserProfile } from "../hooks/useQueries";
+import { saveUserToFirestore } from "../lib/useFirestoreUsers";
 
 function HeroCard() {
   return (
@@ -231,6 +233,31 @@ export default function LandingPage() {
   const year = new Date().getFullYear();
   const { data: profile } = useUserProfile();
 
+  const handleJoinAsTeacher = () => {
+    const localProfile = loadLocalProfile();
+    if (localProfile) {
+      // Existing user: set teacher role immediately in localStorage, then redirect.
+      // Mark a short skip window so useRoleSync doesn't overwrite with stale Firebase data.
+      const updatedProfile = { ...localProfile, role: AppRole.teacher };
+      saveLocalProfile(updatedProfile);
+      localStorage.setItem("askspark_role", "teacher");
+      localStorage.setItem(
+        "askspark_role_skip_sync_until",
+        String(Date.now() + 15000),
+      );
+      // Fire-and-forget Firebase update — do NOT await
+      void saveUserToFirestore(
+        localProfile.userId,
+        localProfile.displayName,
+        "teacher",
+      );
+      navigate({ to: "/dashboard/teacher" });
+    } else {
+      // New user: go to onboarding with teacher pre-selected
+      navigate({ to: "/onboarding", search: { role: "teacher" } });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -266,7 +293,7 @@ export default function LandingPage() {
                 size="lg"
                 variant="outline"
                 className="rounded-full border-primary/30 text-primary hover:bg-primary/5 font-semibold px-8"
-                onClick={() => navigate({ to: "/onboarding" })}
+                onClick={handleJoinAsTeacher}
                 data-ocid="hero.secondary_button"
               >
                 Join as Teacher
