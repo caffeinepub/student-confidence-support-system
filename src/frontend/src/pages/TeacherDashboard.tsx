@@ -543,6 +543,9 @@ export default function TeacherDashboard() {
                           onClick={() => {
                             markRead(n.id);
                             setNotifOpen(false);
+                            if (n.navigateTo) {
+                              navigate({ to: n.navigateTo as "/" });
+                            }
                           }}
                         >
                           <div className="flex-1 min-w-0">

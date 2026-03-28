@@ -192,7 +192,7 @@ export default function ProfilePage() {
       return;
     }
     setSaving(true);
-    const safetyTimer = setTimeout(() => setSaving(false), 10000);
+    const safetyTimer = setTimeout(() => setSaving(false), 8000);
     try {
       const saved = saveLocalProfile({
         ...currentProfile,
@@ -262,7 +262,16 @@ export default function ProfilePage() {
       setShowCode(false);
       setSwitchStep("teacher-code");
     } else if (targetRole === "teacher" && !teacherAlreadyInitialized) {
-      // First time teacher — need to CREATE a code
+      // First time: switch role immediately (no code needed), then show create-code modal
+      const cp = profile ?? loadLocalProfile();
+      if (cp) {
+        const updated = { ...cp, role: AppRole.teacher };
+        saveLocalProfile(updated);
+        setProfile(updated);
+        localStorage.setItem("askspark_role", "teacher");
+        // Fire-and-forget Firebase update
+        void saveUserToFirestore(cp.userId, cp.displayName, "teacher");
+      }
       setNewCode("");
       setConfirmCode("");
       setCodeSetupError("");
@@ -285,17 +294,20 @@ export default function ProfilePage() {
     if (!currentProfile) return;
     setSavingCode(true);
     setCodeSetupError("");
-    const safetyTimer = setTimeout(() => setSavingCode(false), 5000);
+    const safetyTimer = setTimeout(() => setSavingCode(false), 8000);
     try {
       await Promise.race([
         saveTeacherCode(currentProfile.userId, newCode.trim()),
         new Promise<void>((_, reject) =>
-          setTimeout(() => reject(new Error("timeout")), 5000),
+          setTimeout(() => reject(new Error("timeout")), 8000),
         ),
       ]);
       setTeacherAlreadyInitialized(true);
       clearTimeout(safetyTimer);
-      await performSwitch("teacher", undefined);
+      // Role was already switched in handleConfirmContinue; just navigate
+      toast.success("Teacher code created! Welcome to Teacher mode.");
+      resetSwitchState();
+      navigate({ to: "/dashboard/teacher" });
     } catch (err) {
       console.error(err);
       setCodeSetupError("Failed to save code. Please try again.");
@@ -330,12 +342,12 @@ export default function ProfilePage() {
     if (!currentProfile) return;
     setSavingCode(true);
     setCodeSetupError("");
-    const safetyTimer = setTimeout(() => setSavingCode(false), 5000);
+    const safetyTimer = setTimeout(() => setSavingCode(false), 8000);
     try {
       await Promise.race([
         saveTeacherCode(currentProfile.userId, newCode.trim()),
         new Promise<void>((_, reject) =>
-          setTimeout(() => reject(new Error("timeout")), 5000),
+          setTimeout(() => reject(new Error("timeout")), 8000),
         ),
       ]);
       clearTimeout(safetyTimer);
@@ -366,7 +378,7 @@ export default function ProfilePage() {
     if (!currentProfile) return;
     setSavingCode(true);
     setCodeSetupError("");
-    const safetyTimer = setTimeout(() => setSavingCode(false), 5000);
+    const safetyTimer = setTimeout(() => setSavingCode(false), 8000);
     try {
       let valid: boolean;
       try {
@@ -376,7 +388,7 @@ export default function ProfilePage() {
             setTimeout(
               () =>
                 reject(new Error("Verification timed out. Please try again.")),
-              5000,
+              8000,
             ),
           ),
         ]);
@@ -403,7 +415,7 @@ export default function ProfilePage() {
       await Promise.race([
         saveTeacherCode(currentProfile.userId, newCode.trim()),
         new Promise<void>((_, reject) =>
-          setTimeout(() => reject(new Error("timeout")), 5000),
+          setTimeout(() => reject(new Error("timeout")), 8000),
         ),
       ]);
       clearTimeout(safetyTimer);

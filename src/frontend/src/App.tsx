@@ -84,11 +84,14 @@ const dashboardRedirectRoute = createRoute({
   path: "/dashboard",
   beforeLoad: () => {
     const profile = loadLocalProfile();
+    // Also check the direct askspark_role key as a fallback
+    const directRole = localStorage.getItem("askspark_role");
+    const isTeacher =
+      profile?.role === AppRole.teacher ||
+      directRole === AppRole.teacher ||
+      directRole === "teacher";
     throw redirect({
-      to:
-        profile?.role === AppRole.teacher
-          ? "/dashboard/teacher"
-          : "/dashboard/student",
+      to: isTeacher ? "/dashboard/teacher" : "/dashboard/student",
     });
   },
   component: () => null,
