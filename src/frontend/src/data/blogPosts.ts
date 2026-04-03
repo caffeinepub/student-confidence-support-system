@@ -6,11 +6,15 @@ export interface BlogSection {
 export interface BlogPost {
   slug: string;
   title: string;
+  metaTitle: string; // 50–60 chars, keyword at start
+  metaDescription: string; // 150–160 chars, keyword + CTA
+  canonicalPath: string; // canonical URL path
   subtitle: string;
   author: string;
   date: string;
   readTime: string;
   excerpt: string;
+  heroImageAlt: string; // SEO alt text for hero/thumbnail image
   content: BlogSection[];
   tags: string[];
 }
@@ -18,6 +22,12 @@ export interface BlogPost {
 export const blogPosts: BlogPost[] = [
   {
     slug: "why-students-hesitate-to-ask-questions",
+    // 54 chars — primary keyword at start
+    metaTitle: "Why Students Hesitate to Ask Questions in Class",
+    // 158 chars — keyword + CTA
+    metaDescription:
+      "Discover why students hesitate to ask questions in class — fear of judgment, peer pressure, and self-doubt. Learn how AskSpark helps students ask freely and build real confidence.",
+    canonicalPath: "/blog/why-students-hesitate",
     title: "Why Students Hesitate to Ask Questions",
     subtitle:
       "The real reasons behind classroom silence — and how AskSpark is helping students speak up",
@@ -25,20 +35,22 @@ export const blogPosts: BlogPost[] = [
     date: "March 2026",
     readTime: "6 min read",
     excerpt:
-      "Most students have a doubt in class but never raise their hand. Fear of judgment, social pressure, and the worry of looking stupid are stopping students from learning. AskSpark was built to change that.",
+      "Most students hesitate to ask questions in class due to fear of judgment and peer pressure. AskSpark removes these barriers with anonymous doubt submission — so every student can ask freely.",
+    heroImageAlt:
+      "Students hesitating to ask questions in a classroom — AskSpark helps break classroom silence",
     tags: ["Student Confidence", "Psychology", "Learning", "AskSpark"],
     content: [
       {
         type: "h2",
-        text: "The Problem No One Talks About",
+        text: "Why Students Hesitate to Ask Questions: The Problem No One Talks About",
       },
       {
         type: "p",
-        text: 'Picture this: a teacher finishes explaining a concept. They ask, "Does everyone understand?" Half the class is confused — but almost no one raises their hand. The students nod, the teacher moves on, and the confusion quietly grows into a bigger gap.',
+        text: 'Students hesitate to ask questions every single day — but the silence in classrooms is rarely discussed. Picture this: a teacher finishes explaining a concept and asks, "Does everyone understand?" Half the class is confused, but almost no one raises their hand. The students nod, the teacher moves on, and the confusion quietly grows into a bigger gap.',
       },
       {
         type: "p",
-        text: "This happens in almost every classroom, every day. Students hesitate to ask questions — not because they don't have them, but because asking feels risky. AskSpark was created to solve exactly this problem.",
+        text: "This happens in almost every classroom, every day. Students don't ask — not because they don't have doubts, but because asking feels risky. AskSpark was created to solve exactly this problem.",
       },
       {
         type: "highlight",
@@ -46,19 +58,19 @@ export const blogPosts: BlogPost[] = [
       },
       {
         type: "h2",
-        text: "Reason 1: Fear of Looking Stupid",
+        text: "Reason 1: Fear of Looking Stupid in Class",
       },
       {
         type: "p",
-        text: 'The most common reason students don\'t ask questions is the fear of being judged by their classmates. They worry: "What if everyone else already knows this? What if they laugh at me?"',
+        text: 'The most common reason students hesitate to ask questions is the fear of being judged by classmates. They worry: "What if everyone else already knows this? What if they laugh at me?"',
       },
       {
         type: "p",
-        text: "For example, imagine a first-year engineering student who doesn't understand a basic concept in Data Structures. They've missed it for three lectures now. The longer they wait, the harder it gets to ask — because asking means admitting they've been confused for weeks.",
+        text: "For example, imagine a first-year engineering student who doesn't understand a basic Data Structures concept. They've missed it for three lectures. The longer they wait, the harder it gets to ask — because asking means admitting they've been confused for weeks.",
       },
       {
         type: "p",
-        text: "On AskSpark, this student can submit their doubt anonymously. No name, no embarrassment. Just the question and a quick answer from the teacher.",
+        text: "On AskSpark, this student can submit their doubt anonymously. No name, no embarrassment — just the question and a clear answer from the teacher.",
       },
       {
         type: "h2",
@@ -66,51 +78,51 @@ export const blogPosts: BlogPost[] = [
       },
       {
         type: "p",
-        text: "Asking a question in a classroom means making yourself visible in front of everyone. For many students — especially those who are naturally quiet or new to college life — that visibility feels very uncomfortable.",
+        text: "Asking a question in class means making yourself visible in front of everyone. For many students — especially those who are naturally quiet or new to college — that visibility feels deeply uncomfortable.",
       },
       {
         type: "p",
-        text: "This is especially true in competitive academic environments, like engineering or medical colleges, where students feel pressure to appear confident and capable at all times. Admitting confusion feels like showing weakness.",
+        text: "In competitive environments like engineering or medical colleges, students feel constant pressure to appear confident and capable. Admitting confusion feels like showing weakness.",
       },
       {
         type: "h3",
-        text: "School Students Face the Same Problem",
+        text: "School Students Face the Same Hesitation",
       },
       {
         type: "p",
-        text: "School students (Class 6 to Class 12) are not immune either. A Class 9 student who doesn't understand a Maths concept might stay silent in class and just copy answers without actually learning — because asking feels embarrassing in front of their friends.",
+        text: "School students (Class 6 to Class 12) face this too. A Class 9 student who doesn't understand a Maths concept might copy answers without actually learning — because asking feels embarrassing in front of friends.",
       },
       {
         type: "highlight",
-        text: "AskSpark supports both school students (Class 6–12) and college students across all branches — CSE, EEE, ECE, Mechanical, Medical, and more. Every student can ask in their own safe space.",
+        text: "AskSpark supports both school students (Class 6–12) and college students across all branches — CSE, EEE, ECE, Mechanical, Medical, and more. Every student has their own safe space to ask.",
       },
       {
         type: "h2",
-        text: "Reason 3: They Think the Question Is Too Basic",
+        text: "Reason 3: Students Think Their Doubt Is Too Basic",
       },
       {
         type: "p",
-        text: 'Many students hold back because they believe their doubt is "too simple" or "too obvious." They think, "The teacher will think I wasn\'t paying attention." So they never ask — and the doubt stays unanswered.',
+        text: 'Many students hold back because they believe their doubt is "too simple" or "too obvious." They think: "The teacher will think I wasn\'t paying attention." So the doubt stays unanswered.',
       },
       {
         type: "p",
-        text: "The truth is: there's no such thing as a basic doubt when it's blocking your understanding. Every unanswered question is a gap that compounds over time. A small confusion about fractions in Class 7 can become a big problem in Class 10 Algebra.",
+        text: "The truth: there's no such thing as a basic doubt when it blocks your understanding. Every unanswered question is a gap that compounds over time. A small confusion about fractions in Class 7 can become a serious problem in Class 10 Algebra.",
       },
       {
         type: "h2",
-        text: "How AskSpark Helps Students Break the Silence",
+        text: "How AskSpark Helps Students Stop Hesitating",
       },
       {
         type: "p",
-        text: "AskSpark is a student doubt platform built specifically to remove the social barriers that stop students from asking. The platform's anonymous doubt submission lets students post questions without attaching their name. The teacher receives the full question — with any images or attachments — but never sees who sent it.",
+        text: "AskSpark is a student doubt platform built to remove the social barriers that stop students from asking. Anonymous doubt submission lets students post questions without attaching their name. The teacher receives the full question — with any images or attachments — but never sees who sent it.",
       },
       {
         type: "p",
-        text: "Over time, students who use AskSpark report feeling more confident — both on the platform and in real life. When the habit of asking is no longer connected to fear, it becomes natural. That's the goal of AskSpark: make asking a normal, easy part of learning.",
+        text: "Over time, students who use AskSpark report feeling more confident — both on the platform and in real life. When the habit of asking is no longer tied to fear, it becomes natural. That's the goal of AskSpark: make asking a safe, easy, and normal part of learning.",
       },
       {
         type: "h2",
-        text: "FAQ: Student Hesitation and AskSpark",
+        text: "FAQ: Why Students Hesitate and How AskSpark Helps",
       },
       {
         type: "h3",
@@ -130,7 +142,7 @@ export const blogPosts: BlogPost[] = [
       },
       {
         type: "h3",
-        text: "Q: Can other students see my doubts?",
+        text: "Q: Can other students see my doubts on AskSpark?",
       },
       {
         type: "p",
@@ -148,6 +160,12 @@ export const blogPosts: BlogPost[] = [
   },
   {
     slug: "benefits-of-anonymous-doubt-platforms",
+    // 57 chars — primary keyword at start
+    metaTitle: "Benefits of Anonymous Doubt Platforms for Students",
+    // 157 chars — keyword + CTA
+    metaDescription:
+      "Anonymous doubt platforms like AskSpark help students ask more, learn faster, and build real confidence. Discover the key benefits and why your school should adopt one today.",
+    canonicalPath: "/blog/benefits-anonymous-doubt",
     title: "The Benefits of Anonymous Doubt Platforms",
     subtitle:
       "Why letting students ask without fear is the most powerful thing a learning platform can do",
@@ -155,7 +173,9 @@ export const blogPosts: BlogPost[] = [
     date: "March 2026",
     readTime: "5 min read",
     excerpt:
-      "Anonymous doubt submission isn't just a feature — it's the key to unlocking real learning. Platforms like AskSpark that remove the fear of judgment see more questions, better teaching, and faster confidence growth in students.",
+      "Anonymous doubt platforms like AskSpark remove the fear of judgment so students ask more, learn better, and gain confidence faster. See the key benefits every student and teacher should know.",
+    heroImageAlt:
+      "Students using an anonymous doubt platform on AskSpark to ask questions without fear",
     tags: ["Anonymous Learning", "EdTech", "Student Platform", "AskSpark"],
     content: [
       {
@@ -164,11 +184,11 @@ export const blogPosts: BlogPost[] = [
       },
       {
         type: "p",
-        text: "An anonymous doubt platform is a digital space where students can ask questions without revealing their identity. Instead of raising a hand in class and risking judgment from peers, students type their doubt, submit it anonymously, and receive a clear answer — privately and safely.",
+        text: "An anonymous doubt platform is a digital space where students can ask questions without revealing their identity. Anonymous doubt platforms like AskSpark remove the biggest barrier to learning — fear of judgment — so students type their doubt, submit it safely, and receive a clear answer privately.",
       },
       {
         type: "p",
-        text: "AskSpark is one such platform. It was built by Team Spark to help students — especially those who hesitate to ask — get their questions answered without fear. The result? More questions, better learning, and students who grow in confidence over time.",
+        text: "AskSpark was built by Team Spark to help students — especially those who hesitate to ask — get their questions answered without fear. The result: more questions, better learning, and students who grow in confidence over time.",
       },
       {
         type: "highlight",
@@ -184,7 +204,7 @@ export const blogPosts: BlogPost[] = [
       },
       {
         type: "p",
-        text: "For example: a Class 10 student who doesn't understand how to calculate the area of a circle might stay silent in class for weeks. On AskSpark, they can submit that doubt anonymously, get a clear explanation with examples, and finally move forward.",
+        text: "Example: a Class 10 student who doesn't understand how to calculate the area of a circle might stay silent in class for weeks. On AskSpark, they can submit that doubt anonymously, get a clear explanation with examples, and finally move forward.",
       },
       {
         type: "h2",
@@ -192,31 +212,31 @@ export const blogPosts: BlogPost[] = [
       },
       {
         type: "p",
-        text: "When more students ask questions, teachers get a much clearer picture of where the class actually stands. Instead of guessing which topics need more explanation, teachers on AskSpark can see the doubts flowing in — organised by subject and class — and plan their next session accordingly.",
+        text: "When more students ask questions, teachers get a much clearer picture of where the class actually stands. Instead of guessing which topics need more explanation, teachers on AskSpark see doubts organised by subject and class — and can plan their next session accordingly.",
       },
       {
         type: "p",
-        text: "If 15 students submit anonymous doubts about the same concept in Physics — say, Newton's Second Law — that's direct, honest feedback that the topic needs revisiting. Without anonymity, most of those 15 students would have stayed silent.",
+        text: "If 15 students submit anonymous doubts about Newton's Second Law — that's direct, honest feedback the topic needs revisiting. Without anonymity, most of those students would have stayed silent.",
       },
       {
         type: "h3",
-        text: "Real-Time Answers With Images",
+        text: "Real-Time Answers With Image Support",
       },
       {
         type: "p",
-        text: "AskSpark supports image uploads in the doubt form. Students can photograph a specific step in their Maths solution or a diagram in their notebook and submit it as part of their doubt. Teachers respond with text, images, or even voice notes — making answers clearer and more useful.",
+        text: "AskSpark supports image uploads in the doubt form. Students can photograph a specific step in their Maths solution or a notebook diagram and submit it with their doubt. Teachers respond with text, images, or voice notes — making answers clearer and more useful.",
       },
       {
         type: "h2",
-        text: "Benefit 3: It Builds Confidence Over Time",
+        text: "Benefit 3: Anonymous Doubt Platforms Build Confidence Over Time",
       },
       {
         type: "p",
-        text: "Every doubt submitted and answered on AskSpark is a small win for the student. They asked, they got clarity, they moved forward. Over weeks and months, these small wins add up to a meaningfully more confident learner.",
+        text: "Every doubt submitted and answered on AskSpark is a small win for the student. They asked, got clarity, and moved forward. Over weeks and months, these small wins add up to a meaningfully more confident learner.",
       },
       {
         type: "p",
-        text: "AskSpark tracks this with a Confidence Score — a running measure of a student's engagement and learning activity on the platform. As the score grows, badges are awarded at key milestones. The gamification layer makes asking feel like progress, not a risk.",
+        text: "AskSpark tracks this with a Confidence Score — a running measure of a student's engagement and learning activity. As the score grows, badges are awarded at key milestones. Gamification makes asking feel like progress, not a risk.",
       },
       {
         type: "h2",
@@ -224,7 +244,7 @@ export const blogPosts: BlogPost[] = [
       },
       {
         type: "p",
-        text: "AskSpark personalises the learning experience based on who you are. School students (Class 6–12) see content, tests, and study rooms for their class. College students select their branch — CSE, EEE, ECE, Mechanical, Medical, IT, or others — and everything on the platform filters accordingly.",
+        text: "AskSpark personalises the learning experience based on who you are. School students (Class 6–12) see content, tests, and study rooms for their class. College students select their branch — CSE, EEE, ECE, Mechanical, Medical, IT, or others — and everything filters accordingly.",
       },
       {
         type: "p",
@@ -252,15 +272,15 @@ export const blogPosts: BlogPost[] = [
       },
       {
         type: "p",
-        text: "A: Yes. On AskSpark, teachers receive the full doubt — subject, question, and any attached images. The only thing removed is the student's name. The question itself is treated the same as any other submission.",
+        text: "A: Yes. On AskSpark, teachers receive the full doubt — subject, question, and any attached images. The only thing removed is the student's name. The question is treated the same as any other submission.",
       },
       {
         type: "h3",
-        text: "Q: Is AskSpark free?",
+        text: "Q: Is AskSpark free for students?",
       },
       {
         type: "p",
-        text: "A: Yes, AskSpark is completely free for students. Sign up with Google, select your class or branch, and start submitting doubts immediately — no payment required.",
+        text: "A: Yes, AskSpark is completely free for students. Select your class or branch and start submitting doubts immediately — no payment required.",
       },
       {
         type: "h3",
@@ -268,12 +288,16 @@ export const blogPosts: BlogPost[] = [
       },
       {
         type: "p",
-        text: "A: Absolutely. AskSpark supports both school students (Class 6 to 12) and college students across all major branches. The platform adapts to your level and shows you content, tests, and study rooms relevant to your class or branch.",
+        text: "A: Absolutely. AskSpark supports both school students (Class 6 to 12) and college students across all major branches. The platform adapts to your level and shows content, tests, and study rooms relevant to your class or branch.",
       },
     ],
   },
   {
     slug: "how-askspark-builds-student-confidence",
+    metaTitle: "How AskSpark Builds Student Confidence | AskSpark",
+    metaDescription:
+      "AskSpark builds student confidence through anonymous doubt submission, gamified scores, weekly tests, and community study rooms. Discover how each feature helps students learn boldly.",
+    canonicalPath: "/blog/how-askspark-builds-student-confidence",
     title: "How AskSpark Builds Student Confidence",
     subtitle: "A feature-by-feature look at the confidence-building ecosystem",
     author: "Team AskSpark",
@@ -281,6 +305,8 @@ export const blogPosts: BlogPost[] = [
     readTime: "7 min read",
     excerpt:
       "AskSpark isn't just a doubt-solving app — it's a confidence-building ecosystem. Here's how each feature on the platform is designed to help students ask freely, learn boldly, and grow.",
+    heroImageAlt:
+      "AskSpark platform helping students build confidence through anonymous doubt submission and learning",
     tags: ["AskSpark Features", "Confidence", "Student Learning", "EdTech"],
     content: [
       {
@@ -305,7 +331,7 @@ export const blogPosts: BlogPost[] = [
       },
       {
         type: "h3",
-        text: "Image and Camera Support",
+        text: "Image and Camera Support for Doubts",
       },
       {
         type: "p",
@@ -329,11 +355,11 @@ export const blogPosts: BlogPost[] = [
       },
       {
         type: "h3",
-        text: "Community Chat and Study Rooms",
+        text: "Community Chat and Subject Study Rooms",
       },
       {
         type: "p",
-        text: "AskSpark's community chat is organised into study rooms by class and branch — so a CSE student joins a CSE room, a Class 10 student joins their class room. Peer-to-peer learning happens here. Students help each other, discuss concepts, and normalise the act of asking. The moderation system keeps the environment supportive and safe.",
+        text: "AskSpark's community chat is organised into study rooms by class and branch — a CSE student joins a CSE room, a Class 10 student joins their class room. Peer-to-peer learning happens here. Students help each other, discuss concepts, and normalise the act of asking. The moderation system keeps the environment supportive and safe.",
       },
       {
         type: "h2",

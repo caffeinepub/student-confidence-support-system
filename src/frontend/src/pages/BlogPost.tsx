@@ -14,11 +14,109 @@ import { useEffect } from "react";
 import Header from "../components/Header";
 import { blogPosts } from "../data/blogPosts";
 
+const BASE_URL = "https://student-confidence-support-system-03r.caffeine.xyz";
+
 export default function BlogPost() {
   const { slug } = useParams({ strict: false }) as { slug: string };
   const navigate = useNavigate();
   const post = blogPosts.find((p) => p.slug === slug);
   const relatedPosts = blogPosts.filter((p) => p.slug !== slug).slice(0, 2);
+
+  // ── Dynamic SEO per blog post ──────────────────────────────────────────────
+  useEffect(() => {
+    if (!post) return;
+
+    // 1. Title tag
+    document.title = post.metaTitle;
+
+    // Helper to upsert a <meta> tag
+    const setMeta = (selector: string, attr: string, value: string) => {
+      let el = document.querySelector(selector) as HTMLMetaElement | null;
+      if (!el) {
+        el = document.createElement("meta");
+        const [attrName, attrVal] = selector
+          .replace(/[\[\]]/g, "")
+          .split("=")
+          .map((s) => s.replace(/["']/g, ""));
+        el.setAttribute(attrName, attrVal);
+        document.head.appendChild(el);
+      }
+      el.setAttribute(attr, value);
+    };
+
+    const canonicalUrl = `${BASE_URL}${post.canonicalPath}`;
+    const articleUrl = `${BASE_URL}/blog/${post.slug}`;
+    const ogImage = `${BASE_URL}/assets/generated/blog-header.dim_1200x480.jpg`;
+
+    // 2. Meta description
+    setMeta('meta[name="description"]', "content", post.metaDescription);
+
+    // 3. Canonical
+    let canonical = document.querySelector(
+      'link[rel="canonical"]',
+    ) as HTMLLinkElement | null;
+    if (!canonical) {
+      canonical = document.createElement("link");
+      canonical.rel = "canonical";
+      document.head.appendChild(canonical);
+    }
+    canonical.href = canonicalUrl;
+
+    // 4. Open Graph
+    setMeta('meta[property="og:title"]', "content", post.metaTitle);
+    setMeta('meta[property="og:description"]', "content", post.metaDescription);
+    setMeta('meta[property="og:url"]', "content", articleUrl);
+    setMeta('meta[property="og:type"]', "content", "article");
+    setMeta('meta[property="og:image"]', "content", ogImage);
+
+    // 5. Twitter Card
+    setMeta('meta[name="twitter:title"]', "content", post.metaTitle);
+    setMeta(
+      'meta[name="twitter:description"]',
+      "content",
+      post.metaDescription,
+    );
+    setMeta('meta[name="twitter:image"]', "content", ogImage);
+
+    // 6. JSON-LD Article schema
+    const ldId = "blog-post-jsonld";
+    let ldScript = document.getElementById(ldId) as HTMLScriptElement | null;
+    if (!ldScript) {
+      ldScript = document.createElement("script");
+      ldScript.id = ldId;
+      ldScript.type = "application/ld+json";
+      document.head.appendChild(ldScript);
+    }
+    ldScript.textContent = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Article",
+      headline: post.metaTitle,
+      description: post.metaDescription,
+      image: ogImage,
+      author: {
+        "@type": "Organization",
+        name: post.author,
+        url: BASE_URL,
+      },
+      publisher: {
+        "@type": "Organization",
+        name: "AskSpark",
+        logo: {
+          "@type": "ImageObject",
+          url: `${BASE_URL}/assets/generated/favicon-spark-transparent.dim_64x64.png`,
+        },
+      },
+      datePublished: post.date,
+      mainEntityOfPage: { "@type": "WebPage", "@id": articleUrl },
+      keywords: post.tags.join(", "),
+    });
+
+    // Restore on unmount
+    return () => {
+      document.title = "AskSpark \u2013 Student Confidence Support System";
+      if (ldScript) ldScript.remove();
+    };
+  }, [post]);
 
   useEffect(() => {
     if (!post) {
@@ -160,6 +258,7 @@ export default function BlogPost() {
             ))}
           </div>
 
+          {/* H1 — uses the full post title for clear heading hierarchy */}
           <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-3 leading-tight">
             {post.title}
           </h1>
@@ -188,12 +287,14 @@ export default function BlogPost() {
         </div>
       </section>
 
-      {/* Header image */}
+      {/* Header image — per-post keyword alt text */}
       <div className="max-w-3xl mx-auto px-4 -mt-2 mb-0">
         <img
           src="/assets/generated/blog-header.dim_1200x480.jpg"
           loading="lazy"
-          alt="AskSpark blog article header — students learning and asking doubts"
+          alt={post.heroImageAlt}
+          width={1200}
+          height={480}
           className="w-full h-56 sm:h-72 object-cover rounded-2xl shadow-lg"
         />
       </div>
@@ -264,7 +365,9 @@ export default function BlogPost() {
                   <img
                     src="/assets/generated/blog-header.dim_1200x480.jpg"
                     loading="lazy"
-                    alt={related.title}
+                    alt={`AskSpark blog: ${related.title}`}
+                    width={160}
+                    height={112}
                     className="w-20 h-14 object-cover rounded-xl flex-shrink-0"
                   />
                   <div className="flex-1 min-w-0">
@@ -297,7 +400,7 @@ export default function BlogPost() {
 
       {/* Footer */}
       <footer className="border-t border-border/40 mt-8 py-8 text-center text-sm text-muted-foreground">
-        © {new Date().getFullYear()}. Built with ❤️ using{" "}
+        \u00a9 {new Date().getFullYear()}. Built with \u2764\ufe0f using{" "}
         <a
           href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
           target="_blank"
