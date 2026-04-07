@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { GraduationCap, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { loadLocalProfile } from "../hooks/useLocalProfile";
 import NotificationBell from "./NotificationBell";
@@ -33,18 +33,21 @@ export default function Header() {
       }`}
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-        <Link
-          to="/"
-          className="flex items-center gap-2.5 font-bold text-foreground"
-          data-ocid="nav.link"
-        >
-          <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center shadow-primary">
-            <GraduationCap className="w-5 h-5 text-white" />
-          </div>
-          <span className="font-display text-xl font-bold">
-            <span className="text-gradient">Ask</span>
-            <span className="text-foreground">Spark</span>
-          </span>
+        <Link to="/" className="flex items-center" data-ocid="nav.link">
+          {/* Desktop: horizontal logo */}
+          <img
+            src="/assets/generated/askspark-logo-horizontal-transparent.dim_800x200.png"
+            alt="AskSpark"
+            className="hidden md:block h-10 w-auto object-contain"
+            style={{ filter: "drop-shadow(0 2px 8px rgba(99,102,241,0.35))" }}
+          />
+          {/* Mobile: icon only */}
+          <img
+            src="/assets/generated/askspark-icon-transparent.dim_512x512.png"
+            alt="AskSpark"
+            className="md:hidden h-9 w-9 object-contain"
+            style={{ filter: "drop-shadow(0 2px 8px rgba(99,102,241,0.35))" }}
+          />
         </Link>
 
         <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-muted-foreground">

@@ -266,6 +266,17 @@ export default function LandingPage() {
       <section className="gradient-hero min-h-[calc(100vh-4rem)] flex items-center px-4 sm:px-6 overflow-hidden">
         <div className="max-w-6xl mx-auto w-full py-20 grid lg:grid-cols-2 gap-16 items-center">
           <div className="space-y-7 animate-fade-up">
+            {/* Hero logo */}
+            <div className="flex items-center">
+              <img
+                src="/assets/generated/askspark-logo-horizontal-transparent.dim_800x200.png"
+                alt="AskSpark"
+                className="h-12 w-auto object-contain"
+                style={{
+                  filter: "drop-shadow(0 2px 12px rgba(99,102,241,0.4))",
+                }}
+              />
+            </div>
             <div className="inline-flex items-center gap-1.5 bg-white/70 text-primary border border-primary/20 text-sm font-medium px-4 py-1.5 rounded-full warm-shadow">
               <Sparkles className="w-3.5 h-3.5" />
               AI-Powered Education Platform
@@ -715,9 +726,11 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-10">
           <div>
             <div className="flex items-center gap-2.5 mb-4">
-              <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center">
-                <GraduationCap className="w-4 h-4 text-white" />
-              </div>
+              <img
+                src="/assets/generated/askspark-icon-transparent.dim_512x512.png"
+                alt="AskSpark"
+                className="h-8 w-8 object-contain"
+              />
               <span className="font-display text-lg font-bold text-white">
                 AskSpark
               </span>
