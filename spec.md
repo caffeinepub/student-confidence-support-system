@@ -1,34 +1,39 @@
-# AskSpark
+# AskSpark Dashboard UI Redesign
 
 ## Current State
-The app has multiple pages: LandingPage, OnboardingPage, StudentDashboard, TeacherDashboard, ProfilePage, SubmitDoubt, LearningHub, LecturesPage, PracticePage, SupportPage, LiveClassPage, VideoCallPage, WeeklyTest, ChatRoom, BlogList, BlogPost, HelpCenter, AdminPanel.
 
-All routes are defined in App.tsx using TanStack Router.
+The app has two separate dashboard files:
+- `src/frontend/src/pages/StudentDashboard.tsx` (1411 lines) — student view with doubts, badges, confidence ring, AskSpark bot, video call modal, notifications
+- `src/frontend/src/pages/TeacherDashboard.tsx` (736 lines) — teacher view with doubts management, answer system, live class, student list, chat
+
+Current design uses glassmorphism utility class `.glass-card` in index.css, generic card layouts, no gradient background on the page itself, and standard shadcn card/badge components with basic colors.
 
 ## Requested Changes (Diff)
 
 ### Add
-- Nothing new
+- Soft gradient page background: light blue → purple → indigo (applied as a wrapper `min-h-screen` div in both dashboards)
+- Hero welcome section with large "Welcome back 👋" heading + motivational subtitle + Confidence Score card (colorful, highlighted)
+- Quick Action Grid: 4 glassmorphism cards (Ask Doubt, Join Live Class, Search Doubts, Chat Support) each with icon, title, short description, and hover scale/glow effect
+- Problem → Solution section in student dashboard: 3 problem cards (Fear of asking, Lack of confidence, No instant help) + 4 solution cards (Anonymous doubts, Teacher answers, Live classes, Smart search)
+- Video Solutions section: card-based previews with thumbnail + title (reuse existing DoubtSearch-style embed logic)
+- Floating AI chat button: bottom-right, translucent gradient pill button replacing current inline bot trigger
+- Teacher dashboard header: large "Teacher Dashboard" title + 3 stats cards (Doubts Solved, Students Helped, Rating)
+- Teacher doubts panel with glassmorphism card layout, quick reply inline per doubt
+- Teacher performance analytics cards (simple grid)
 
 ### Modify
-- Fix all click/navigation bugs across all pages
-- Fix save button on ProfilePage (name edit, teacher code create/update/reset)
-- Fix role switch: first-time switch prompts code creation, subsequent switches require code, redirect to correct dashboard
-- Fix all navigation: back buttons, dashboard redirect, post-save redirects all go to correct role-based dashboard
-- Fix all button disabled/loading states so they never get permanently stuck
-- Ensure all routes in App.tsx are reachable and connected correctly
-- Fix LandingPage: 'Join as Teacher' sets role=teacher and redirects to /dashboard/teacher correctly
-- Fix dashboard redirect route: /dashboard smart-redirects based on role
-- Fix notification bell click handlers to navigate correctly
-- Fix ProfilePage back button to go to /dashboard/teacher or /dashboard/student based on role
+- index.css: Update CSS custom properties to premium blue-purple-indigo palette. Add `dashboard-gradient` utility class for the page background. Enhance `.glass-card` with more blur and white/opacity layering.
+- StudentDashboard: Wrap entire page in gradient background. Redesign all sections in order: Hero → Quick Actions → Problem/Solution → Recent Doubts → Video Solutions. Preserve all Firebase hooks, doubt fetching, notification, video call, rating logic entirely unchanged.
+- TeacherDashboard: Wrap in same gradient. Redesign header with stats. Redesign doubts panel, live class section, student chat section, performance cards. Preserve all Firebase hooks, answer submission, live class, call logic entirely unchanged.
+- tailwind.config.js: Ensure `glass` and `dashboard-gradient` utilities are available, add smooth hover transition config.
 
 ### Remove
-- Nothing
+- Old flat/plain card layouts in dashboards (replace with glassmorphism equivalents)
+- Any remaining inline hardcoded color styles (replace with design tokens)
 
 ## Implementation Plan
-1. Audit ProfilePage: ensure all save handlers have try/catch/finally, setLoading(false) always called, Promise.race with 8s timeout on all Firebase calls, navigate to correct dashboard after save
-2. Audit LandingPage: ensure Join as Teacher sets role and navigates instantly
-3. Audit App.tsx dashboardRedirectRoute: reads role from localStorage, redirects to /dashboard/teacher or /dashboard/student
-4. Audit StudentDashboard and TeacherDashboard: ensure all onClick handlers are defined and working, back/home navigation correct
-5. Ensure all routes are registered in routeTree
-6. Fix any TypeScript errors that could block functionality
+
+1. Update `src/frontend/src/index.css` — new OKLCH token palette (blue-purple-indigo), enhanced `.glass-card`, new `.dashboard-gradient` background utility, `.action-card` hover utility
+2. Delegate full StudentDashboard.tsx and TeacherDashboard.tsx redesign to the frontend subagent, preserving all existing logic (Firebase hooks, WebRTC, notifications, routing) while replacing only UI markup and styling
+3. Validate build (typecheck + lint)
+4. Deploy

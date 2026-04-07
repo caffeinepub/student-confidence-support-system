@@ -22,6 +22,7 @@ import {
   Send,
   Star,
   TrendingUp,
+  User,
   Video,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -74,6 +75,7 @@ function LiveClassForm({
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="e.g. Algebra - Chapter 5"
+          className="bg-white/60 border-white/50 rounded-xl"
           data-ocid="liveclass.input"
         />
       </div>
@@ -85,10 +87,11 @@ function LiveClassForm({
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
           placeholder="e.g. Mathematics"
+          className="bg-white/60 border-white/50 rounded-xl"
         />
       </div>
       <Button
-        className="w-full gradient-primary text-white"
+        className="w-full gradient-primary text-white rounded-xl font-bold"
         onClick={startClass}
         disabled={!title.trim()}
         data-ocid="liveclass.primary_button"
@@ -140,26 +143,28 @@ function CallStudents({
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {students.slice(0, 6).map((s, i) => (
         <div
           key={s.id}
-          className="flex items-center justify-between p-3 rounded-xl bg-muted/40"
+          className="flex items-center justify-between p-3 rounded-2xl bg-white/50 border border-white/50"
           data-ocid={`call.item.${i + 1}`}
         >
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white text-xs font-bold">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white text-xs font-bold">
               {s.name.charAt(0)}
             </div>
             <div>
-              <div className="text-sm font-medium">{s.name}</div>
+              <div className="text-sm font-semibold text-foreground">
+                {s.name}
+              </div>
               <div className="text-xs text-muted-foreground">Student</div>
             </div>
           </div>
           <div className="flex gap-2">
             <Button
               size="sm"
-              variant="outline"
+              className="rounded-full bg-sky-100 text-sky-700 hover:bg-sky-200 border-0"
               onClick={() => initiateCall(s, "audio")}
               data-ocid={`call.secondary_button.${i + 1}`}
             >
@@ -167,7 +172,7 @@ function CallStudents({
             </Button>
             <Button
               size="sm"
-              variant="outline"
+              className="rounded-full bg-indigo-100 text-indigo-700 hover:bg-indigo-200 border-0"
               onClick={() => initiateCall(s, "video")}
               data-ocid={`call.edit_button.${i + 1}`}
             >
@@ -198,7 +203,7 @@ function FirestoreDoubtCard({
   const [submitting, setSubmitting] = useState(false);
   const [videoCallOpen, setVideoCallOpen] = useState(false);
 
-  const subjectColor = "bg-primary/10 text-primary";
+  const subjectColor = "bg-indigo-100 text-indigo-700";
 
   async function handleSubmitAnswer() {
     if (!answerText.trim()) {
@@ -227,18 +232,23 @@ function FirestoreDoubtCard({
     return new Date(doubt.createdAt).toLocaleDateString();
   })();
 
+  const borderAccent =
+    doubt.status === "answered"
+      ? "border-l-4 border-l-green-400"
+      : "border-l-4 border-l-amber-400";
+
   return (
-    <Card
-      className="glass-card border-white/40 warm-shadow hover:warm-shadow-lg transition-all duration-300"
+    <div
+      className={`glass-card rounded-2xl border-white/50 warm-shadow hover:warm-shadow-lg transition-all duration-300 overflow-hidden ${borderAccent}`}
       data-ocid={`teacher.item.${doubt.id}`}
     >
-      <CardContent className="p-5">
+      <div className="p-5">
         <button
           type="button"
           className="flex items-start gap-3 cursor-pointer w-full text-left"
           onClick={onToggle}
         >
-          <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary flex-shrink-0">
+          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 flex items-center justify-center text-sm font-bold text-indigo-700 flex-shrink-0">
             {doubt.isAnonymous ? "?" : doubt.studentName.charAt(0)}
           </div>
           <div className="flex-1 min-w-0">
@@ -247,16 +257,16 @@ function FirestoreDoubtCard({
                 {doubt.subject || "General"}
               </Badge>
               {doubt.status === "answered" ? (
-                <Badge className="bg-green-100 text-green-700 border-green-200 text-xs">
+                <Badge className="bg-green-100 text-green-700 border-0 text-xs">
                   <CheckCircle2 className="w-3 h-3 mr-1" /> Answered
                 </Badge>
               ) : (
-                <Badge className="bg-amber-100 text-amber-700 border-amber-200 text-xs">
+                <Badge className="bg-amber-100 text-amber-700 border-0 text-xs">
                   <Clock className="w-3 h-3 mr-1" /> Pending
                 </Badge>
               )}
             </div>
-            <div className="font-medium text-foreground text-sm line-clamp-2">
+            <div className="font-semibold text-foreground text-sm line-clamp-2">
               {doubt.question}
             </div>
             <div className="flex items-center gap-3 mt-1">
@@ -269,7 +279,12 @@ function FirestoreDoubtCard({
               </span>
             </div>
           </div>
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0 flex items-center gap-2">
+            {doubt.status !== "answered" && (
+              <span className="bg-indigo-500 text-white rounded-full px-3 py-1 text-xs font-bold hover:bg-indigo-600 transition-colors">
+                Reply
+              </span>
+            )}
             {expanded ? (
               <ChevronUp className="w-4 h-4 text-muted-foreground" />
             ) : (
@@ -280,7 +295,7 @@ function FirestoreDoubtCard({
 
         {expanded && (
           <div className="mt-4 animate-fade-in">
-            <div className="bg-muted/40 rounded-xl p-4 mb-4">
+            <div className="bg-white/50 rounded-xl p-4 mb-4 border border-white/50">
               <div className="text-xs text-muted-foreground font-medium mb-1">
                 Full Question
               </div>
@@ -331,10 +346,11 @@ function FirestoreDoubtCard({
                   onChange={(e) => setAnswerText(e.target.value)}
                   placeholder="Type your answer..."
                   rows={4}
+                  className="bg-white/60 border-white/50 rounded-xl"
                   data-ocid="teacher.textarea"
                 />
                 <Button
-                  className="w-full gradient-primary text-white"
+                  className="w-full gradient-primary text-white rounded-xl font-bold"
                   onClick={handleSubmitAnswer}
                   disabled={submitting || !answerText.trim()}
                   data-ocid="teacher.submit_button"
@@ -354,8 +370,8 @@ function FirestoreDoubtCard({
             )}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
@@ -364,12 +380,12 @@ function TeacherRatingCard({ teacherName }: { teacherName: string }) {
   const { average, count } = useFirebaseRating(teacherName);
   return (
     <Card
-      className="glass-card border-white/40 warm-shadow col-span-2 lg:col-span-1"
+      className="glass-card border-white/50 warm-shadow rounded-3xl col-span-2 lg:col-span-1"
       data-ocid="teacher.card.5"
     >
       <CardContent className="p-5">
-        <div className="w-10 h-10 rounded-xl bg-yellow-50 flex items-center justify-center mb-3">
-          <Star className="w-5 h-5 text-yellow-500" />
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center mb-3">
+          <Star className="w-5 h-5 text-white" />
         </div>
         <div className="text-2xl font-display font-bold text-foreground">
           {average > 0 ? `${average.toFixed(1)} / 5` : "—"}
@@ -406,10 +422,13 @@ export default function TeacherDashboard() {
   const teacherName = localProfile?.displayName ?? "Teacher";
 
   const firestoreDoubts = useAllDoubts();
+  const allDoubts = firestoreDoubts;
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [filterTab, setFilterTab] = useState<"all" | "pending" | "answered">(
     "pending",
   );
+
+  const { average: avgRating } = useFirebaseRating(teacherName);
 
   // Notifications
   const { notifications, unreadCount, markRead, markAllRead } =
@@ -436,43 +455,10 @@ export default function TeacherDashboard() {
         ? answered
         : firestoreDoubts;
 
-  const STATS = [
-    {
-      label: "Total Doubts",
-      value: firestoreDoubts.length,
-      icon: MessageSquare,
-      color: "text-blue-500",
-      bg: "bg-blue-50",
-    },
-    {
-      label: "Answered",
-      value: answered.length,
-      icon: CheckCircle2,
-      color: "text-green-500",
-      bg: "bg-green-50",
-    },
-    {
-      label: "Pending",
-      value: pending.length,
-      icon: Clock,
-      color: "text-amber-500",
-      bg: "bg-amber-50",
-    },
-    {
-      label: "Response Rate",
-      value:
-        firestoreDoubts.length > 0
-          ? `${Math.round((answered.length / firestoreDoubts.length) * 100)}%`
-          : "0%",
-      icon: TrendingUp,
-      color: "text-purple-500",
-      bg: "bg-purple-50",
-    },
-  ];
-
   return (
-    <div className="min-h-screen bg-background">
-      <header className="glass-nav sticky top-0 z-40 px-4 sm:px-6 py-3">
+    <div className="dashboard-gradient">
+      {/* Sticky Header */}
+      <header className="sticky top-0 z-40 px-4 sm:px-6 py-3 backdrop-blur-xl bg-white/60 border-b border-white/40 shadow-sm">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <AvatarButton
@@ -483,7 +469,7 @@ export default function TeacherDashboard() {
               <div className="font-display font-bold text-foreground text-sm">
                 {teacherName}
               </div>
-              <Badge className="bg-green-100 text-green-700 border-green-200 text-xs">
+              <Badge className="bg-green-100 text-green-700 border-0 text-xs">
                 Teacher
               </Badge>
             </div>
@@ -493,7 +479,7 @@ export default function TeacherDashboard() {
             <div className="relative" ref={notifRef}>
               <button
                 type="button"
-                className="relative w-9 h-9 rounded-full glass-card flex items-center justify-center hover:bg-muted/60 transition-colors"
+                className="relative w-9 h-9 rounded-full glass-card flex items-center justify-center hover:bg-white/70 transition-colors"
                 onClick={() => setNotifOpen((o) => !o)}
                 aria-label="Notifications"
                 data-ocid="teacher.open_modal_button"
@@ -507,10 +493,10 @@ export default function TeacherDashboard() {
               </button>
               {notifOpen && (
                 <div
-                  className="absolute top-full mt-2 right-0 w-80 glass-card rounded-2xl shadow-xl border-white/40 overflow-hidden z-50"
+                  className="absolute top-full mt-2 right-0 w-80 glass-card rounded-2xl shadow-xl border-white/50 overflow-hidden z-50"
                   data-ocid="teacher.popover"
                 >
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-white/30">
                     <span className="font-display font-bold text-sm text-foreground">
                       Notifications
                     </span>
@@ -537,7 +523,7 @@ export default function TeacherDashboard() {
                         <button
                           key={n.id}
                           type="button"
-                          className={`w-full text-left px-4 py-3 flex items-start gap-3 hover:bg-muted/40 transition-colors border-b border-border/30 last:border-0 ${
+                          className={`w-full text-left px-4 py-3 flex items-start gap-3 hover:bg-white/40 transition-colors border-b border-white/20 last:border-0 ${
                             n.read ? "opacity-60" : ""
                           }`}
                           onClick={() => {
@@ -568,8 +554,8 @@ export default function TeacherDashboard() {
             </div>
             <Button
               size="sm"
-              variant="outline"
-              className="rounded-full"
+              variant="ghost"
+              className="rounded-full hover:bg-white/50"
               onClick={() => navigate({ to: "/" })}
               data-ocid="teacher.link"
             >
@@ -580,30 +566,110 @@ export default function TeacherDashboard() {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8">
-        <div>
-          <h1 className="font-display text-2xl font-bold text-foreground">
-            Teacher Dashboard
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Review student doubts and provide helpful answers.
-          </p>
+        {/* ── Teacher Hero Header ── */}
+        <div className="glass-card rounded-3xl p-6 border-white/50 warm-shadow">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+            <div className="flex-1">
+              <h1 className="font-display text-3xl sm:text-4xl font-bold text-foreground">
+                Teacher Dashboard 👨‍🏫
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                Manage doubts, run live classes, and track your impact
+              </p>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                {
+                  label: "Doubts Solved",
+                  value: allDoubts.filter((d) => d.status === "answered")
+                    .length,
+                  icon: CheckCircle2,
+                  color: "text-green-600",
+                  bg: "bg-green-50",
+                },
+                {
+                  label: "Students Helped",
+                  value: new Set(allDoubts.map((d) => d.userId)).size,
+                  icon: User,
+                  color: "text-blue-600",
+                  bg: "bg-blue-50",
+                },
+                {
+                  label: "Avg Rating",
+                  value: `${(avgRating || 0).toFixed(1)}★`,
+                  icon: Star,
+                  color: "text-amber-600",
+                  bg: "bg-amber-50",
+                },
+              ].map((stat) => (
+                <div
+                  key={stat.label}
+                  className={`${stat.bg} rounded-2xl p-4 flex flex-col items-center gap-1 min-w-[90px]`}
+                >
+                  <stat.icon className={`w-5 h-5 ${stat.color}`} />
+                  <div className={`text-xl font-bold ${stat.color}`}>
+                    {stat.value}
+                  </div>
+                  <div className="text-xs text-muted-foreground text-center leading-tight">
+                    {stat.label}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
-        {/* Stats */}
+        {/* ── Stats Grid ── */}
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-          {STATS.map((s, i) => (
+          {[
+            {
+              label: "Total Doubts",
+              value: firestoreDoubts.length,
+              icon: MessageSquare,
+              color: "text-indigo-600",
+              bg: "from-indigo-50 to-violet-50",
+              iconBg: "from-indigo-500 to-violet-500",
+            },
+            {
+              label: "Answered",
+              value: answered.length,
+              icon: CheckCircle2,
+              color: "text-green-600",
+              bg: "from-green-50 to-emerald-50",
+              iconBg: "from-green-500 to-emerald-500",
+            },
+            {
+              label: "Pending",
+              value: pending.length,
+              icon: () => <span className="text-lg">⏳</span>,
+              color: "text-amber-600",
+              bg: "from-amber-50 to-orange-50",
+              iconBg: "from-amber-400 to-orange-400",
+            },
+            {
+              label: "Response Rate",
+              value:
+                firestoreDoubts.length > 0
+                  ? `${Math.round((answered.length / firestoreDoubts.length) * 100)}%`
+                  : "0%",
+              icon: TrendingUp,
+              color: "text-violet-600",
+              bg: "from-violet-50 to-purple-50",
+              iconBg: "from-violet-500 to-purple-500",
+            },
+          ].map((s, i) => (
             <Card
               key={s.label}
-              className="glass-card border-white/40 warm-shadow"
+              className={`border-white/50 warm-shadow rounded-3xl bg-gradient-to-br ${s.bg}`}
               data-ocid={`teacher.card.${i + 1}`}
             >
               <CardContent className="p-5">
                 <div
-                  className={`w-10 h-10 rounded-xl ${s.bg} flex items-center justify-center mb-3`}
+                  className={`w-10 h-10 rounded-xl bg-gradient-to-br ${s.iconBg} flex items-center justify-center mb-3`}
                 >
-                  <s.icon className={`w-5 h-5 ${s.color}`} />
+                  <s.icon className="w-5 h-5 text-white" />
                 </div>
-                <div className="text-2xl font-display font-bold text-foreground">
+                <div className={`text-2xl font-display font-bold ${s.color}`}>
                   {s.value}
                 </div>
                 <div className="text-xs text-muted-foreground">{s.label}</div>
@@ -613,109 +679,172 @@ export default function TeacherDashboard() {
           <TeacherRatingCard teacherName={teacherName} />
         </div>
 
-        {/* Doubts with filter tabs */}
-        <Tabs
-          value={filterTab}
-          onValueChange={(v) =>
-            setFilterTab(v as "all" | "pending" | "answered")
-          }
-          data-ocid="teacher.tab"
-          id="pending-doubts"
+        {/* ── Start Live Class ── */}
+        <div
+          className="glass-card rounded-3xl p-6 border-white/50 warm-shadow"
+          style={{
+            background:
+              "linear-gradient(135deg, rgba(239,68,68,0.05) 0%, rgba(251,113,133,0.08) 100%)",
+          }}
         >
-          <TabsList className="bg-muted/50 rounded-xl p-1">
-            <TabsTrigger
-              value="all"
-              className="rounded-lg"
-              data-ocid="teacher.tab"
-            >
-              All
-              {firestoreDoubts.length > 0 && (
-                <Badge className="ml-2 bg-muted text-muted-foreground text-xs">
-                  {firestoreDoubts.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger
-              value="pending"
-              className="rounded-lg"
-              data-ocid="teacher.tab"
-            >
-              Pending
-              {pending.length > 0 && (
-                <Badge className="ml-2 bg-amber-100 text-amber-700 border-amber-200 text-xs">
-                  {pending.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger
-              value="answered"
-              className="rounded-lg"
-              data-ocid="teacher.tab"
-            >
-              Answered
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value={filterTab} className="mt-4 space-y-3">
-            {displayDoubts.length === 0 ? (
-              <div
-                className="text-center py-16 text-muted-foreground"
-                data-ocid="teacher.empty_state"
-              >
-                <CheckCircle2 className="w-12 h-12 mx-auto mb-3 text-green-300" />
-                <div className="font-medium">
-                  {filterTab === "pending"
-                    ? "All caught up! No pending doubts. 🎉"
-                    : "No doubts in this category."}
-                </div>
-              </div>
-            ) : (
-              displayDoubts.map((d) => (
-                <FirestoreDoubtCard
-                  key={d.id}
-                  doubt={d}
-                  expanded={expandedId === d.id}
-                  onToggle={() =>
-                    setExpandedId(expandedId === d.id ? null : d.id)
-                  }
-                  teacherName={teacherName}
-                  onAnswered={() => setExpandedId(null)}
-                />
-              ))
-            )}
-          </TabsContent>
-        </Tabs>
-
-        {/* Live Class */}
-        <Card className="glass-card border-white/40 warm-shadow">
-          <CardContent className="p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-2 h-2 rounded-full bg-red-500" />
-              <h2 className="font-display font-bold text-foreground">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center">
+              <Video className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h2 className="font-display text-lg font-bold text-foreground">
                 Start Live Class
               </h2>
+              <p className="text-xs text-muted-foreground">
+                Broadcast to all your students in real-time
+              </p>
             </div>
-            <LiveClassForm
-              navigate={navigate}
-              teacherName={teacherName}
-              userId={userId}
-            />
-          </CardContent>
-        </Card>
+          </div>
+          <LiveClassForm
+            navigate={navigate}
+            teacherName={teacherName}
+            userId={userId}
+          />
+        </div>
 
-        {/* Call Students */}
-        <Card className="glass-card border-white/40 warm-shadow">
-          <CardContent className="p-5">
-            <h2 className="font-display font-bold text-foreground mb-4">
-              📞 Call a Student
-            </h2>
-            <CallStudents
-              navigate={navigate}
-              teacherName={teacherName}
-              userId={userId}
-            />
-          </CardContent>
-        </Card>
+        {/* ── Doubts Panel ── */}
+        <div>
+          <h2 className="font-display text-xl font-bold text-foreground mb-4">
+            Student Doubts
+          </h2>
+          <Tabs
+            value={filterTab}
+            onValueChange={(v) =>
+              setFilterTab(v as "all" | "pending" | "answered")
+            }
+            data-ocid="teacher.tab"
+            id="pending-doubts"
+          >
+            <TabsList className="bg-white/50 border border-white/50 rounded-2xl p-1 gap-1">
+              <TabsTrigger
+                value="all"
+                className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm"
+                data-ocid="teacher.tab"
+              >
+                All
+                {firestoreDoubts.length > 0 && (
+                  <Badge className="ml-2 bg-muted text-muted-foreground border-0 text-xs">
+                    {firestoreDoubts.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger
+                value="pending"
+                className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm"
+                data-ocid="teacher.tab"
+              >
+                Pending
+                {pending.length > 0 && (
+                  <Badge className="ml-2 bg-amber-100 text-amber-700 border-0 text-xs">
+                    {pending.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger
+                value="answered"
+                className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm"
+                data-ocid="teacher.tab"
+              >
+                Answered
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value={filterTab} className="mt-4 space-y-3">
+              {displayDoubts.length === 0 ? (
+                <div
+                  className="text-center py-16 text-muted-foreground glass-card rounded-3xl border-white/50"
+                  data-ocid="teacher.empty_state"
+                >
+                  <CheckCircle2 className="w-12 h-12 mx-auto mb-3 text-green-300" />
+                  <div className="font-medium">
+                    {filterTab === "pending"
+                      ? "All caught up! No pending doubts. 🎉"
+                      : "No doubts in this category."}
+                  </div>
+                </div>
+              ) : (
+                displayDoubts.map((d) => (
+                  <FirestoreDoubtCard
+                    key={d.id}
+                    doubt={d}
+                    expanded={expandedId === d.id}
+                    onToggle={() =>
+                      setExpandedId(expandedId === d.id ? null : d.id)
+                    }
+                    teacherName={teacherName}
+                    onAnswered={() => setExpandedId(null)}
+                  />
+                ))
+              )}
+            </TabsContent>
+          </Tabs>
+        </div>
+
+        {/* ── Call Students ── */}
+        <div className="glass-card rounded-3xl p-6 border-white/50 warm-shadow">
+          <h2 className="font-display text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-500 to-blue-500 flex items-center justify-center">
+              <Mic className="w-4 h-4 text-white" />
+            </div>
+            Call a Student
+          </h2>
+          <CallStudents
+            navigate={navigate}
+            teacherName={teacherName}
+            userId={userId}
+          />
+        </div>
+
+        {/* ── Performance Analytics ── */}
+        <div className="glass-card rounded-3xl p-6 border-white/50 warm-shadow">
+          <h2 className="font-display text-xl font-bold text-foreground mb-5">
+            Performance Overview
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {[
+              {
+                label: "Total Doubts",
+                value: allDoubts.length,
+                icon: "📚",
+                color: "from-indigo-100 to-violet-100",
+              },
+              {
+                label: "Answered",
+                value: allDoubts.filter((d) => d.status === "answered").length,
+                icon: "✅",
+                color: "from-green-100 to-emerald-100",
+              },
+              {
+                label: "Pending",
+                value: allDoubts.filter((d) => d.status !== "answered").length,
+                icon: "⏳",
+                color: "from-amber-100 to-orange-100",
+              },
+              {
+                label: "Students",
+                value: new Set(allDoubts.map((d) => d.userId)).size,
+                icon: "👥",
+                color: "from-sky-100 to-blue-100",
+              },
+            ].map((s) => (
+              <div
+                key={s.label}
+                className={`rounded-2xl p-4 bg-gradient-to-br ${s.color} flex flex-col items-center text-center gap-1`}
+              >
+                <div className="text-2xl">{s.icon}</div>
+                <div className="text-2xl font-bold text-foreground">
+                  {s.value}
+                </div>
+                <div className="text-xs text-muted-foreground">{s.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
 
         <div className="text-center text-xs text-muted-foreground py-6">
           © {new Date().getFullYear()}. Built with ❤️ using{" "}

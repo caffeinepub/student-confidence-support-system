@@ -107,7 +107,7 @@ function ConfidenceRing({ score }: { score: number }) {
           cy="48"
           r={r}
           fill="none"
-          stroke="oklch(0.93 0.012 70)"
+          stroke="oklch(0.93 0.012 265)"
           strokeWidth="8"
         />
         <circle
@@ -198,9 +198,10 @@ function ActiveLiveClasses({
 
   if (classes.length === 0) {
     return (
-      <div className="rounded-2xl glass-card border-white/40 warm-shadow p-5">
+      <div className="glass-card rounded-3xl border-white/50 warm-shadow p-6">
         <h2 className="font-display font-bold text-foreground mb-2 flex items-center gap-2">
-          🎥 Live Classes
+          <span className="w-2 h-2 rounded-full bg-muted-foreground inline-block" />
+          Live Classes
         </h2>
         <div
           className="text-center text-muted-foreground text-sm py-4"
@@ -213,27 +214,29 @@ function ActiveLiveClasses({
   }
 
   return (
-    <div className="rounded-2xl glass-card border-white/40 warm-shadow p-5">
-      <h2 className="font-display font-bold text-foreground mb-3 flex items-center gap-2">
+    <div className="glass-card rounded-3xl border-white/50 warm-shadow p-6">
+      <h2 className="font-display font-bold text-foreground mb-4 flex items-center gap-2">
         <span className="inline-block w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-        Live Classes
+        Live Now
       </h2>
-      <div className="space-y-2">
+      <div className="space-y-3">
         {classes.map((c, i) => (
           <div
             key={c.id}
-            className="flex items-center justify-between p-3 rounded-xl bg-muted/40"
+            className="flex items-center justify-between p-4 rounded-2xl bg-white/50 border border-white/60"
             data-ocid={`liveclass.item.${i + 1}`}
           >
             <div>
-              <div className="font-semibold text-sm">{c.title}</div>
-              <div className="text-xs text-muted-foreground">
+              <div className="font-semibold text-sm text-foreground">
+                {c.title}
+              </div>
+              <div className="text-xs text-muted-foreground mt-0.5">
                 {c.subject} · {c.hostName} · {c.viewerCount ?? 0} watching
               </div>
             </div>
             <button
               type="button"
-              className="px-4 py-1.5 rounded-full bg-red-500 hover:bg-red-600 text-white text-xs font-semibold transition-colors"
+              className="px-4 py-1.5 rounded-full bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white text-xs font-bold transition-all shadow-sm"
               onClick={() =>
                 navigate({ to: `/live/${c.id}`, search: { role: "viewer" } })
               }
@@ -294,13 +297,18 @@ function FirestoreDoubtStudentCard({
     }
   }
 
+  const borderAccent =
+    doubt.status === "answered"
+      ? "border-l-4 border-l-green-400"
+      : "border-l-4 border-l-amber-400";
+
   return (
-    <Card
-      className="glass-card border-white/40 warm-shadow hover:warm-shadow-lg transition-all duration-300"
+    <div
+      className={`glass-card rounded-2xl border-white/50 warm-shadow hover:warm-shadow-lg transition-all duration-300 overflow-hidden ${borderAccent}`}
       data-ocid={`student.item.${index + 1}`}
       data-doubt-id={doubt.id}
     >
-      <CardContent className="p-5">
+      <div className="p-5">
         <button
           type="button"
           className="flex items-start justify-between gap-3 w-full text-left"
@@ -308,7 +316,7 @@ function FirestoreDoubtStudentCard({
         >
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap mb-2">
-              <Badge className="bg-primary/10 text-primary border-0 text-xs">
+              <Badge className="bg-indigo-100 text-indigo-700 border-0 text-xs">
                 {doubt.subject}
               </Badge>
               {doubt.status === "answered" ? (
@@ -323,7 +331,7 @@ function FirestoreDoubtStudentCard({
                 </Badge>
               )}
             </div>
-            <div className="font-medium text-foreground text-sm truncate">
+            <div className="font-semibold text-foreground text-sm truncate">
               {doubt.question}
             </div>
             <div className="text-xs text-muted-foreground mt-1">
@@ -340,7 +348,7 @@ function FirestoreDoubtStudentCard({
         </button>
 
         {expanded && (
-          <div className="mt-4 pt-4 border-t border-border animate-fade-in">
+          <div className="mt-4 pt-4 border-t border-white/40 animate-fade-in">
             {doubt.status === "answered" && doubt.answer ? (
               <div className="space-y-3">
                 <div className="text-xs font-semibold text-green-700 mb-1">
@@ -397,8 +405,8 @@ function FirestoreDoubtStudentCard({
             )}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
@@ -534,10 +542,10 @@ export default function StudentDashboard() {
 
   const NotifPanel = () => (
     <div
-      className="absolute top-full mt-2 right-0 w-80 glass-card rounded-2xl warm-shadow border-white/40 overflow-hidden z-50 animate-fade-in"
+      className="absolute top-full mt-2 right-0 w-80 glass-card rounded-2xl shadow-xl border-white/50 overflow-hidden z-50 animate-fade-in"
       data-ocid="student.popover"
     >
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/30">
         <span className="font-display font-bold text-sm text-foreground">
           Notifications
         </span>
@@ -556,7 +564,7 @@ export default function StudentDashboard() {
         <button
           key={n.id}
           type="button"
-          className={`w-full text-left px-4 py-3 flex items-start gap-3 hover:bg-muted/40 transition-colors border-b border-border/30 last:border-0 ${n.read ? "opacity-60" : ""}`}
+          className={`w-full text-left px-4 py-3 flex items-start gap-3 hover:bg-white/40 transition-colors border-b border-white/20 last:border-0 ${n.read ? "opacity-60" : ""}`}
           onClick={() => handleNotifClick(n)}
         >
           <span className="text-lg flex-shrink-0 mt-0.5">{n.icon}</span>
@@ -584,8 +592,8 @@ export default function StudentDashboard() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
-        <div className="h-16 bg-card border-b flex items-center px-6 gap-4">
+      <div className="dashboard-gradient">
+        <div className="h-16 bg-white/60 backdrop-blur-xl border-b border-white/40 flex items-center px-6 gap-4">
           <Skeleton className="w-10 h-10 rounded-xl" />
           <Skeleton className="w-32 h-4" />
           <div className="ml-auto flex gap-3">
@@ -597,7 +605,7 @@ export default function StudentDashboard() {
           <Skeleton className="w-48 h-7" />
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="rounded-2xl border bg-card p-6 space-y-3">
+              <div key={i} className="rounded-3xl glass-card p-6 space-y-3">
                 <Skeleton className="w-8 h-8 rounded-full" />
                 <Skeleton className="w-full h-4" />
                 <Skeleton className="w-3/4 h-3" />
@@ -606,7 +614,7 @@ export default function StudentDashboard() {
           </div>
           <div className="space-y-3">
             {[1, 2].map((i) => (
-              <div key={i} className="rounded-2xl border bg-card p-5 space-y-2">
+              <div key={i} className="rounded-2xl glass-card p-5 space-y-2">
                 <Skeleton className="w-24 h-5 rounded-full" />
                 <Skeleton className="w-3/4 h-4" />
                 <Skeleton className="w-1/2 h-3" />
@@ -619,8 +627,9 @@ export default function StudentDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="glass-nav sticky top-0 z-40 px-4 sm:px-6 py-3">
+    <div className="dashboard-gradient">
+      {/* Sticky Header */}
+      <header className="sticky top-0 z-40 px-4 sm:px-6 py-3 backdrop-blur-xl bg-white/60 border-b border-white/40 shadow-sm">
         <div className="max-w-5xl mx-auto flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <AvatarButton
@@ -631,7 +640,7 @@ export default function StudentDashboard() {
               <div className="font-display font-bold text-foreground text-sm">
                 {localProfile?.displayName ?? "Student"}
               </div>
-              <Badge className="bg-primary/10 text-primary border-primary/20 text-xs">
+              <Badge className="bg-indigo-100 text-indigo-700 border-0 text-xs">
                 Student
               </Badge>
               {localProfile?.interests && localProfile.interests.length > 0 && (
@@ -639,7 +648,7 @@ export default function StudentDashboard() {
                   {localProfile.interests.slice(0, 3).map((interest) => (
                     <Badge
                       key={interest}
-                      className="bg-muted text-muted-foreground border border-border text-[10px] px-1.5 py-0"
+                      className="bg-white/60 text-muted-foreground border border-white/50 text-[10px] px-1.5 py-0"
                     >
                       {interest}
                     </Badge>
@@ -656,7 +665,7 @@ export default function StudentDashboard() {
               <div className="relative">
                 <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  className="pl-9 pr-8 h-9 w-52 rounded-full bg-white/60 border-border text-sm focus:w-72 transition-all duration-300"
+                  className="pl-9 pr-8 h-9 w-52 rounded-full bg-white/60 border-white/50 text-sm focus:w-72 transition-all duration-300"
                   placeholder="Search doubts…"
                   value={searchQuery}
                   onChange={(e) => {
@@ -671,7 +680,7 @@ export default function StudentDashboard() {
                 {searchQuery && (
                   <button
                     type="button"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
                     onClick={() => {
                       setSearchQuery("");
                       setSearchOpen(false);
@@ -681,66 +690,43 @@ export default function StudentDashboard() {
                   </button>
                 )}
               </div>
-              {searchOpen && (
-                <div className="absolute top-full mt-2 left-0 w-80 glass-card rounded-2xl warm-shadow border-white/40 overflow-hidden z-50 animate-fade-in">
-                  {filteredDoubts.length === 0 ? (
-                    <div className="p-4 text-sm text-muted-foreground text-center">
-                      No results for “{searchQuery}”
-                    </div>
-                  ) : (
-                    filteredDoubts.map((d) => (
-                      <button
-                        key={d.id}
-                        type="button"
-                        className="w-full text-left px-4 py-3 hover:bg-muted/40 transition-colors border-b border-border/30 last:border-0"
-                        onClick={() => {
-                          setExpandedDoubt(d.id);
-                          setSearchOpen(false);
-                          setSearchQuery("");
-                          setTimeout(() => {
-                            document
-                              .querySelector(`[data-doubt-id="${d.id}"]`)
-                              ?.scrollIntoView({
-                                behavior: "smooth",
-                                block: "center",
-                              });
-                          }, 100);
-                        }}
-                      >
-                        <div className="flex items-center gap-2">
-                          <Badge className="bg-primary/10 text-primary border-0 text-xs">
-                            {d.subject}
-                          </Badge>
-                          <Badge
-                            className={`text-xs border-0 ${d.status === "answered" ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}
-                          >
-                            {d.status === "answered"
-                              ? "✅ Answered"
-                              : "⏳ Pending"}
-                          </Badge>
-                        </div>
-                        <div className="text-sm text-foreground mt-1 line-clamp-1">
-                          {d.question}
-                        </div>
-                      </button>
-                    ))
-                  )}
+              {searchOpen && filteredDoubts.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-1 glass-card rounded-2xl shadow-xl border-white/50 overflow-hidden z-50">
+                  {filteredDoubts.map((d) => (
+                    <button
+                      key={d.id}
+                      type="button"
+                      className="w-full text-left px-4 py-3 hover:bg-white/50 border-b border-white/30 last:border-0"
+                      onClick={() => {
+                        setExpandedDoubt(d.id);
+                        setSearchOpen(false);
+                        setSearchQuery("");
+                      }}
+                    >
+                      <Badge className="bg-indigo-100 text-indigo-700 border-0 text-xs">
+                        {d.subject}
+                      </Badge>
+                      <div className="text-sm text-foreground mt-1 line-clamp-1">
+                        {d.question}
+                      </div>
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
 
-            {/* Notification Bell */}
-            <div ref={notifRef} className="relative">
+            {/* Notification bell */}
+            <div className="relative" ref={notifRef}>
               <button
                 type="button"
-                className="relative w-9 h-9 rounded-full border border-border bg-white/60 flex items-center justify-center hover:bg-muted/40 transition-colors"
+                className="relative w-9 h-9 rounded-full glass-card flex items-center justify-center hover:bg-white/70 transition-colors"
                 onClick={() => setNotifOpen((o) => !o)}
-                data-ocid="student.toggle"
                 aria-label="Notifications"
+                data-ocid="student.open_modal_button"
               >
                 <Bell className="w-4 h-4 text-foreground" />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-0.5">
                     {unreadCount}
                   </span>
                 )}
@@ -750,16 +736,16 @@ export default function StudentDashboard() {
 
             <Button
               size="sm"
-              className="rounded-full gradient-primary text-white border-0 shadow-primary font-medium"
+              className="rounded-full gradient-primary text-white border-0 shadow-primary text-xs font-bold"
               onClick={() => navigate({ to: "/submit" })}
               data-ocid="student.primary_button"
             >
-              <Plus className="w-4 h-4 mr-1" /> Ask a Doubt
+              <Plus className="w-3.5 h-3.5 mr-1" /> Ask Doubt
             </Button>
             <Button
               size="sm"
-              variant="outline"
-              className="rounded-full"
+              variant="ghost"
+              className="rounded-full w-9 h-9 p-0 hover:bg-white/50"
               onClick={() => navigate({ to: "/" })}
               data-ocid="student.secondary_button"
             >
@@ -767,18 +753,19 @@ export default function StudentDashboard() {
             </Button>
           </div>
 
-          {/* Mobile controls */}
+          {/* Mobile icons */}
           <div className="flex sm:hidden items-center gap-2">
-            <div ref={notifRef} className="relative">
+            <div className="relative" ref={notifRef}>
               <button
                 type="button"
-                className="relative w-9 h-9 rounded-full border border-border bg-white/60 flex items-center justify-center"
+                className="relative w-9 h-9 rounded-full glass-card flex items-center justify-center"
                 onClick={() => setNotifOpen((o) => !o)}
-                data-ocid="student.toggle"
+                aria-label="Notifications"
+                data-ocid="student.open_modal_button"
               >
                 <Bell className="w-4 h-4 text-foreground" />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-0.5">
                     {unreadCount}
                   </span>
                 )}
@@ -787,16 +774,8 @@ export default function StudentDashboard() {
             </div>
             <Button
               size="sm"
-              className="rounded-full gradient-primary text-white border-0"
-              onClick={() => navigate({ to: "/submit" })}
-              data-ocid="student.primary_button"
-            >
-              <Plus className="w-4 h-4" />
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="rounded-full"
+              variant="ghost"
+              className="rounded-full w-9 h-9 p-0 hover:bg-white/50"
               onClick={() => navigate({ to: "/" })}
               data-ocid="student.secondary_button"
             >
@@ -812,7 +791,7 @@ export default function StudentDashboard() {
         >
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground z-10" />
           <Input
-            className="pl-9 pr-8 h-9 w-full rounded-full bg-white/60 border-border text-sm"
+            className="pl-9 pr-8 h-9 w-full rounded-full bg-white/60 border-white/50 text-sm"
             placeholder="Search doubts…"
             value={searchQuery}
             onChange={(e) => {
@@ -834,19 +813,19 @@ export default function StudentDashboard() {
             </button>
           )}
           {searchOpen && filteredDoubts.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-1 glass-card rounded-2xl warm-shadow border-white/40 overflow-hidden z-50">
+            <div className="absolute top-full left-0 right-0 mt-1 glass-card rounded-2xl shadow-xl border-white/50 overflow-hidden z-50">
               {filteredDoubts.map((d) => (
                 <button
                   key={d.id}
                   type="button"
-                  className="w-full text-left px-4 py-3 hover:bg-muted/40 border-b border-border/30 last:border-0"
+                  className="w-full text-left px-4 py-3 hover:bg-white/50 border-b border-white/30 last:border-0"
                   onClick={() => {
                     setExpandedDoubt(d.id);
                     setSearchOpen(false);
                     setSearchQuery("");
                   }}
                 >
-                  <Badge className="bg-primary/10 text-primary border-0 text-xs">
+                  <Badge className="bg-indigo-100 text-indigo-700 border-0 text-xs">
                     {d.subject}
                   </Badge>
                   <div className="text-sm text-foreground mt-1 line-clamp-1">
@@ -860,49 +839,218 @@ export default function StudentDashboard() {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8">
-        {/* Motivational banner */}
-        <div className="glass-card rounded-2xl p-5 border-white/40 warm-shadow flex items-center gap-4">
-          <div className="text-3xl">⭐</div>
+        {/* ── Hero Section ── */}
+        <div className="glass-card rounded-3xl p-6 border-white/50 warm-shadow flex flex-col sm:flex-row items-start sm:items-center gap-6">
           <div className="flex-1">
-            <div className="font-display font-bold text-foreground">
-              You're doing amazing, {localProfile?.displayName || "there"}!
-            </div>
-            <div className="text-sm text-muted-foreground">
-              {realDoubts.length > 0
-                ? `You've asked ${realDoubts.length} question${realDoubts.length === 1 ? "" : "s"} so far. Keep it up — curious minds grow faster!`
-                : "Start asking doubts to grow your confidence!"}
-            </div>
+            <h1 className="font-display text-3xl sm:text-4xl font-bold text-foreground">
+              Welcome back 👋
+            </h1>
+            <p className="text-muted-foreground mt-1 text-base">
+              {localProfile?.displayName
+                ? `Hey ${localProfile.displayName}, keep sparking your curiosity!`
+                : "Ask without fear. Learn without limits."}
+            </p>
           </div>
-          <Badge className="bg-amber-100 text-amber-700 border-amber-200 animate-pulse-soft hidden sm:flex">
-            🔥 7-day streak
-          </Badge>
+          {/* Confidence Score Card */}
+          <div
+            className="glass-card rounded-2xl p-5 border-white/50 flex flex-col items-center gap-2 min-w-[140px]"
+            style={{
+              background:
+                "linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(168,85,247,0.12) 100%)",
+            }}
+          >
+            <ConfidenceRing score={confidenceScore} />
+            <div className="text-sm font-bold text-foreground text-center">
+              Confidence Score
+            </div>
+            <Badge className="bg-indigo-100 text-indigo-700 border-indigo-200 text-xs">
+              +8 pts this week
+            </Badge>
+          </div>
         </div>
 
-        {/* Progress Analytics */}
+        {/* ── Quick Action Grid ── */}
+        <div>
+          <h2 className="font-display text-xl font-bold text-foreground mb-4">
+            Quick Actions
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {[
+              {
+                icon: MessageSquare,
+                title: "Ask Doubt",
+                desc: "Post your question anonymously",
+                color: "from-indigo-500 to-violet-500",
+                action: () => navigate({ to: "/submit" }),
+                ocid: "student.ask_doubt.button",
+              },
+              {
+                icon: Video,
+                title: "Join Live Class",
+                desc: "Join an active class now",
+                color: "from-rose-500 to-pink-500",
+                action: () =>
+                  document
+                    .getElementById("live-classes-section")
+                    ?.scrollIntoView({ behavior: "smooth" }),
+                ocid: "student.live_class.button",
+              },
+              {
+                icon: Search,
+                title: "Search Doubts",
+                desc: "Find answers instantly",
+                color: "from-sky-500 to-cyan-500",
+                action: () => navigate({ to: "/learning" }),
+                ocid: "student.search_doubts.button",
+              },
+              {
+                icon: MessageSquare,
+                title: "Chat Support",
+                desc: "24/7 AI assistance",
+                color: "from-emerald-500 to-teal-500",
+                action: () => navigate({ to: "/learning/support" }),
+                ocid: "student.chat_support.button",
+              },
+            ].map((item) => (
+              <button
+                key={item.title}
+                type="button"
+                onClick={item.action}
+                className="action-card glass-card rounded-2xl p-5 border-white/50 flex flex-col items-start gap-3 text-left w-full cursor-pointer warm-shadow"
+                data-ocid={item.ocid}
+              >
+                <div
+                  className={`w-10 h-10 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center`}
+                >
+                  <item.icon className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <div className="font-bold text-foreground text-sm">
+                    {item.title}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-0.5 leading-tight">
+                    {item.desc}
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Problem → Solution Section ── */}
+        <div className="space-y-4">
+          <h2 className="font-display text-xl font-bold text-foreground">
+            Sound Familiar?
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              {
+                emoji: "😰",
+                title: "Fear of Asking",
+                desc: "Worried about being judged for asking basic questions",
+              },
+              {
+                emoji: "😞",
+                title: "Lack of Confidence",
+                desc: "Not sure if your doubt is worth asking",
+              },
+              {
+                emoji: "⏳",
+                title: "No Instant Help",
+                desc: "Stuck waiting hours for an answer",
+              },
+            ].map((p) => (
+              <div
+                key={p.title}
+                className="glass-card rounded-2xl p-5 border-white/50 warm-shadow"
+                style={{ background: "rgba(239,68,68,0.05)" }}
+              >
+                <div className="text-2xl mb-2">{p.emoji}</div>
+                <div className="font-bold text-foreground text-sm">
+                  {p.title}
+                </div>
+                <div className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                  {p.desc}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="flex items-center gap-3 py-2">
+            <div className="flex-1 h-px bg-border" />
+            <span className="text-sm font-bold text-primary">
+              AskSpark solves this
+            </span>
+            <div className="flex-1 h-px bg-border" />
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {[
+              {
+                emoji: "🎭",
+                title: "Anonymous Doubts",
+                color: "from-violet-500 to-indigo-500",
+              },
+              {
+                emoji: "👨‍🏫",
+                title: "Teacher Answers",
+                color: "from-sky-500 to-blue-500",
+              },
+              {
+                emoji: "📺",
+                title: "Live Classes",
+                color: "from-rose-500 to-pink-500",
+              },
+              {
+                emoji: "🔍",
+                title: "Smart Search",
+                color: "from-emerald-500 to-green-500",
+              },
+            ].map((s) => (
+              <div
+                key={s.title}
+                className="glass-card rounded-2xl p-5 border-white/50 flex flex-col items-center text-center gap-2 warm-shadow"
+                style={{ background: "rgba(99,102,241,0.06)" }}
+              >
+                <div
+                  className={`w-10 h-10 rounded-xl bg-gradient-to-br ${s.color} flex items-center justify-center text-lg`}
+                >
+                  {s.emoji}
+                </div>
+                <div className="font-bold text-foreground text-sm">
+                  {s.title}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Progress Analytics ── */}
         <Card
-          className="glass-card border-white/40 warm-shadow"
+          className="glass-card border-white/50 rounded-3xl warm-shadow"
+          style={{ borderLeft: "4px solid oklch(0.55 0.22 265)" }}
           data-ocid="student.progress.card"
         >
-          <CardContent className="p-5">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-primary" />
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center">
+                  <TrendingUp className="w-4 h-4 text-white" />
+                </div>
                 <h2 className="font-display font-bold text-foreground">
                   Your Progress
                 </h2>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4 mb-4">
-              <div className="bg-muted/40 rounded-xl p-3 text-center">
-                <div className="text-2xl font-display font-bold text-foreground">
+              <div className="bg-indigo-50 rounded-xl p-3 text-center">
+                <div className="text-2xl font-display font-bold text-indigo-700">
                   {realDoubts.length}
                 </div>
                 <div className="text-xs text-muted-foreground mt-0.5">
                   Doubts Asked
                 </div>
               </div>
-              <div className="bg-muted/40 rounded-xl p-3 text-center">
-                <div className="text-2xl font-display font-bold text-foreground">
+              <div className="bg-violet-50 rounded-xl p-3 text-center">
+                <div className="text-2xl font-display font-bold text-violet-700">
                   {classesAttended}
                 </div>
                 <div className="text-xs text-muted-foreground mt-0.5">
@@ -932,26 +1080,19 @@ export default function StudentDashboard() {
           </CardContent>
         </Card>
 
-        {/* Learning Hub Shortcut */}
+        {/* ── Learning Hub Shortcut ── */}
         <button
           type="button"
-          className="rounded-2xl warm-shadow overflow-hidden cursor-pointer w-full text-left"
+          className="action-card glass-card rounded-3xl border-white/50 warm-shadow overflow-hidden cursor-pointer w-full text-left"
           style={{
             background:
-              "linear-gradient(135deg, oklch(0.52 0.18 145 / 0.08) 0%, oklch(0.52 0.18 145 / 0.15) 100%)",
-            border: "1.5px solid oklch(0.52 0.18 145 / 0.25)",
+              "linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(5,150,105,0.14) 100%)",
           }}
           onClick={() => navigate({ to: "/learning" })}
           data-ocid="student.learning.card"
         >
           <div className="p-5 flex items-center gap-5">
-            <div
-              className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
-              style={{
-                background:
-                  "linear-gradient(135deg, oklch(0.52 0.18 145) 0%, oklch(0.45 0.16 160) 100%)",
-              }}
-            >
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0 bg-gradient-to-br from-emerald-500 to-teal-500">
               🎓
             </div>
             <div className="flex-1 min-w-0">
@@ -973,17 +1114,16 @@ export default function StudentDashboard() {
           </div>
         </button>
 
-        {/* Weekly Test CTA */}
+        {/* ── Weekly Test CTA ── */}
         <div
-          className="rounded-2xl warm-shadow overflow-hidden"
+          className="glass-card rounded-3xl border-white/50 warm-shadow overflow-hidden"
           style={{
             background:
-              "linear-gradient(135deg, oklch(0.52 0.18 265 / 0.08) 0%, oklch(0.52 0.18 265 / 0.15) 100%)",
-            border: "1.5px solid oklch(0.52 0.18 265 / 0.25)",
+              "linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(139,92,246,0.14) 100%)",
           }}
         >
           <div className="p-5 flex items-center gap-5">
-            <div className="w-14 h-14 rounded-2xl gradient-primary flex items-center justify-center text-2xl flex-shrink-0 shadow-primary">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-2xl flex-shrink-0 shadow-primary">
               📝
             </div>
             <div className="flex-1 min-w-0">
@@ -996,118 +1136,91 @@ export default function StudentDashboard() {
                 </Badge>
               </div>
               <p className="text-sm text-muted-foreground mt-0.5">
-                Take this week's auto-generated test based on your doubt topics
+                Test your knowledge and track improvement
               </p>
             </div>
             <Button
               size="sm"
-              className="rounded-full gradient-primary text-white border-0 shadow-primary font-medium flex-shrink-0"
+              className="rounded-full gradient-primary text-white border-0 shadow-primary flex-shrink-0"
               onClick={() => navigate({ to: "/weekly-test" })}
-              data-ocid="student.primary_button"
+              data-ocid="student.test.button"
             >
-              Take Test →
+              Start Test
             </Button>
           </div>
         </div>
 
-        {/* Test History */}
-        <Card className="glass-card border-white/40 warm-shadow">
-          <CardContent className="p-0">
-            <button
-              type="button"
-              className="w-full flex items-center justify-between px-5 py-4 text-left"
-              onClick={() => setHistoryExpanded((e) => !e)}
-              data-ocid="student.toggle"
-            >
-              <div className="flex items-center gap-2">
-                <span className="text-lg">📊</span>
-                <span className="font-display font-bold text-foreground">
+        {/* ── Test History ── */}
+        {testHistory.length > 0 && (
+          <Card className="glass-card border-white/50 rounded-3xl warm-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-display font-bold text-foreground flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
+                    <Star className="w-4 h-4 text-white" />
+                  </div>
                   Test History
-                </span>
-                <Badge className="bg-muted text-muted-foreground border-border text-xs">
-                  Last 4 weeks
-                </Badge>
+                </h2>
+                <button
+                  type="button"
+                  className="text-xs text-primary hover:underline"
+                  onClick={() => setHistoryExpanded((e) => !e)}
+                  data-ocid="student.history.toggle"
+                >
+                  {historyExpanded ? "Hide" : "Show all"}
+                </button>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground hidden sm:block">
-                  View All
-                </span>
-                {historyExpanded ? (
-                  <ChevronUp className="w-4 h-4 text-muted-foreground" />
-                ) : (
-                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                )}
-              </div>
-            </button>
-            {historyExpanded && (
-              <div className="px-5 pb-5 border-t border-border/50 animate-fade-in">
-                <div className="space-y-2 mt-4">
-                  {testHistory.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground text-sm">
-                      <p>No test history available</p>
-                      <p className="text-xs mt-1">
-                        Take your first weekly test to see your progress
-                      </p>
-                    </div>
-                  ) : (
-                    testHistory.map((row, i) => (
-                      <div
-                        key={row.week}
-                        className="flex items-center gap-3 rounded-xl p-3 bg-muted/30 hover:bg-muted/50 transition-colors"
-                        data-ocid={`student.item.${i + 1}`}
-                      >
-                        <Badge className="bg-primary/10 text-primary border-primary/20 font-bold text-xs w-16 justify-center flex-shrink-0">
-                          Wk {row.week}
-                        </Badge>
-                        <div className="w-16 flex-shrink-0">
-                          <ScoreIndicator score={row.score} />
+              {historyExpanded && (
+                <div className="space-y-2">
+                  {testHistory.slice(-5).map((t, tIdx) => (
+                    <div
+                      key={t.week}
+                      className="flex items-center justify-between p-3 rounded-xl bg-white/50 border border-white/40"
+                      data-ocid={`student.history.item.${tIdx + 1}`}
+                    >
+                      <div>
+                        <div className="text-sm font-medium text-foreground">
+                          Week {t.week}
                         </div>
-                        <div className="flex flex-wrap gap-1 flex-1 min-w-0">
-                          {row.fearZones.length > 0 ? (
-                            row.fearZones.map((z) => (
-                              <Badge
-                                key={z}
-                                className="bg-red-100 text-red-700 border-red-200 text-xs"
-                              >
-                                ⚠ {z}
-                              </Badge>
-                            ))
-                          ) : (
-                            <Badge className="bg-green-100 text-green-700 border-green-200 text-xs">
-                              ✅ No fear zones
-                            </Badge>
-                          )}
-                          {row.strong.map((s) => (
-                            <Badge
-                              key={s}
-                              className="bg-blue-100 text-blue-700 border-blue-200 text-xs"
-                            >
-                              💪 {s}
-                            </Badge>
-                          ))}
+                        <div className="text-xs text-muted-foreground">
+                          {t.date}
                         </div>
                       </div>
-                    ))
-                  )}
+                      <div className="text-right">
+                        <div className="font-display font-bold text-foreground">
+                          <ScoreIndicator score={t.score} />
+                        </div>
+                        {t.strong && t.strong.length > 0 && (
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            Strong: {t.strong.slice(0, 2).join(", ")}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="rounded-full mt-4 text-xs"
-                  onClick={() => navigate({ to: "/weekly-test" })}
-                  data-ocid="student.secondary_button"
-                >
-                  View All History →
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              )}
+              {testHistory.length > 5 && historyExpanded && (
+                <div className="text-center mt-3">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="rounded-full text-xs glass-card border-white/50"
+                    onClick={() => navigate({ to: "/weekly-test" })}
+                    data-ocid="student.history.button"
+                  >
+                    View All History →
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
-        {/* Stats grid */}
+        {/* ── Stats Grid ── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <Card
-            className="glass-card border-white/40 warm-shadow col-span-2 sm:col-span-1"
+            className="glass-card border-white/50 rounded-3xl warm-shadow col-span-2 sm:col-span-1"
             data-ocid="student.card"
           >
             <CardContent className="p-5 flex flex-col items-center">
@@ -1121,13 +1234,15 @@ export default function StudentDashboard() {
             </CardContent>
           </Card>
           <Card
-            className="glass-card border-white/40 warm-shadow"
+            className="glass-card border-white/50 rounded-3xl warm-shadow"
             data-ocid="student.card"
           >
             <CardContent className="p-5">
               <div className="flex items-center justify-between mb-3">
-                <BookOpen className="w-5 h-5 text-blue-500" />
-                <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-xs">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+                  <BookOpen className="w-4 h-4 text-white" />
+                </div>
+                <Badge className="bg-blue-100 text-blue-700 border-0 text-xs">
                   +2
                 </Badge>
               </div>
@@ -1140,13 +1255,15 @@ export default function StudentDashboard() {
             </CardContent>
           </Card>
           <Card
-            className="glass-card border-white/40 warm-shadow"
+            className="glass-card border-white/50 rounded-3xl warm-shadow"
             data-ocid="student.card"
           >
             <CardContent className="p-5">
               <div className="flex items-center justify-between mb-3">
-                <CheckCircle2 className="w-5 h-5 text-green-500" />
-                <Badge className="bg-green-100 text-green-700 border-green-200 text-xs">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
+                  <CheckCircle2 className="w-4 h-4 text-white" />
+                </div>
+                <Badge className="bg-green-100 text-green-700 border-0 text-xs">
                   ↑ 86%
                 </Badge>
               </div>
@@ -1159,13 +1276,15 @@ export default function StudentDashboard() {
             </CardContent>
           </Card>
           <Card
-            className="glass-card border-white/40 warm-shadow"
+            className="glass-card border-white/50 rounded-3xl warm-shadow"
             data-ocid="student.card"
           >
             <CardContent className="p-5">
               <div className="flex items-center justify-between mb-3">
-                <Flame className="w-5 h-5 text-orange-500" />
-                <Badge className="bg-orange-100 text-orange-700 border-orange-200 text-xs">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center">
+                  <Flame className="w-4 h-4 text-white" />
+                </div>
+                <Badge className="bg-orange-100 text-orange-700 border-0 text-xs">
                   Best!
                 </Badge>
               </div>
@@ -1179,12 +1298,12 @@ export default function StudentDashboard() {
           </Card>
         </div>
 
-        {/* XP bar */}
-        <Card className="glass-card border-white/40 warm-shadow">
-          <CardContent className="p-5">
+        {/* ── XP Bar ── */}
+        <Card className="glass-card border-white/50 rounded-3xl warm-shadow">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl gradient-primary flex items-center justify-center">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
                   <Zap className="w-4 h-4 text-white" />
                 </div>
                 <div>
@@ -1196,7 +1315,7 @@ export default function StudentDashboard() {
                   </div>
                 </div>
               </div>
-              <Badge className="bg-primary/10 text-primary border-primary/20 font-bold">
+              <Badge className="bg-indigo-100 text-indigo-700 border-0 font-bold">
                 Lv. 4
               </Badge>
             </div>
@@ -1211,13 +1330,13 @@ export default function StudentDashboard() {
           </CardContent>
         </Card>
 
-        {/* Badges */}
+        {/* ── Badges ── */}
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-display text-xl font-bold text-foreground">
               Your Achievements
             </h2>
-            <Badge className="bg-muted text-muted-foreground">
+            <Badge className="bg-white/60 text-muted-foreground border-white/50">
               3 / 6 earned
             </Badge>
           </div>
@@ -1225,7 +1344,11 @@ export default function StudentDashboard() {
             {BADGES.map((b, i) => (
               <Card
                 key={b.name}
-                className={`border warm-shadow text-center transition-all duration-300 ${b.earned ? "glass-card border-white/40 hover:-translate-y-1" : "bg-muted/40 border-border opacity-60"}`}
+                className={`border warm-shadow text-center transition-all duration-300 rounded-2xl ${
+                  b.earned
+                    ? "glass-card border-white/50 hover:-translate-y-1"
+                    : "bg-white/30 border-white/30 opacity-60"
+                }`}
                 data-ocid={`student.card.${i + 1}`}
               >
                 <CardContent className="p-4">
@@ -1250,7 +1373,12 @@ export default function StudentDashboard() {
           </div>
         </div>
 
-        {/* Recent doubts */}
+        {/* ── Active Live Classes ── */}
+        <div id="live-classes-section">
+          <ActiveLiveClasses navigate={navigate} />
+        </div>
+
+        {/* ── Recent Doubts ── */}
         <div id="doubts-section">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-display text-xl font-bold text-foreground">
@@ -1258,8 +1386,7 @@ export default function StudentDashboard() {
             </h2>
             <Button
               size="sm"
-              variant="outline"
-              className="rounded-full text-xs"
+              className="rounded-full text-xs gradient-primary text-white border-0 shadow-primary"
               onClick={() => navigate({ to: "/submit" })}
               data-ocid="student.secondary_button"
             >
@@ -1269,7 +1396,7 @@ export default function StudentDashboard() {
           <div className="space-y-3" data-ocid="student.list">
             {realDoubts.length === 0 ? (
               <div
-                className="text-center py-12 text-muted-foreground"
+                className="text-center py-12 text-muted-foreground glass-card rounded-3xl border-white/50"
                 data-ocid="student.empty_state"
               >
                 <MessageSquare className="w-10 h-10 mx-auto mb-3 opacity-30" />
@@ -1303,9 +1430,53 @@ export default function StudentDashboard() {
           </div>
         </div>
 
-        {/* Ad Banner */}
+        {/* ── Video Solutions ── */}
+        <div>
+          <h2 className="font-display text-xl font-bold text-foreground mb-4">
+            Video Solutions
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              {
+                title: "Algebra Basics Explained",
+                subject: "Mathematics",
+                thumb: "🧮",
+              },
+              {
+                title: "Newton's Laws of Motion",
+                subject: "Physics",
+                thumb: "⚡",
+              },
+              {
+                title: "Python for Beginners",
+                subject: "Computer Science",
+                thumb: "💻",
+              },
+            ].map((v, idx) => (
+              <div
+                key={v.title}
+                className="action-card glass-card rounded-2xl border-white/50 overflow-hidden warm-shadow"
+                data-ocid={`student.video.card.${idx + 1}`}
+              >
+                <div className="aspect-video bg-gradient-to-br from-indigo-100 to-violet-100 flex items-center justify-center text-4xl">
+                  {v.thumb}
+                </div>
+                <div className="p-4">
+                  <Badge className="bg-indigo-100 text-indigo-700 border-0 text-xs mb-2">
+                    {v.subject}
+                  </Badge>
+                  <div className="font-bold text-foreground text-sm">
+                    {v.title}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Ad Banner ── */}
         <div
-          className="border border-dashed border-primary/20 bg-primary/5 rounded-xl p-3 text-xs text-muted-foreground text-center"
+          className="glass-card rounded-2xl border-white/50 p-3 text-xs text-muted-foreground text-center"
           data-ocid="student.ad.panel"
         >
           📢 Your Ad Here — Partner with AskSpark
@@ -1316,7 +1487,9 @@ export default function StudentDashboard() {
         <div className="text-center text-xs text-muted-foreground py-6">
           © {new Date().getFullYear()}. Built with ❤️ using{" "}
           <a
-            href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(typeof window !== "undefined" ? window.location.hostname : "")}`}
+            href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(
+              typeof window !== "undefined" ? window.location.hostname : "",
+            )}`}
             target="_blank"
             rel="noreferrer"
             className="underline hover:text-foreground transition-colors"
@@ -1341,8 +1514,22 @@ export default function StudentDashboard() {
           })()}
       </main>
 
-      {/* Active Live Classes */}
-      <ActiveLiveClasses navigate={navigate} />
+      {/* Floating AI Chat Button */}
+      <button
+        type="button"
+        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-5 py-3 rounded-full text-white font-bold shadow-xl text-sm"
+        style={{
+          background:
+            "linear-gradient(135deg, oklch(0.55 0.22 265), oklch(0.55 0.22 310))",
+          boxShadow: "0 8px 32px rgba(99,102,241,0.4)",
+        }}
+        onClick={() => navigate({ to: "/learning/support" })}
+        data-ocid="student.ai_chat_button"
+        aria-label="Open AI Chat"
+      >
+        <MessageSquare className="w-4 h-4" />
+        <span className="hidden sm:inline">AI Chat</span>
+      </button>
 
       {/* First-login onboarding modal */}
       <Dialog
@@ -1385,7 +1572,7 @@ export default function StudentDashboard() {
             ].map((item) => (
               <div
                 key={item.step}
-                className="flex items-start gap-3 p-3 rounded-xl bg-muted/40"
+                className="flex items-start gap-3 p-3 rounded-xl bg-indigo-50/60"
               >
                 <span className="text-2xl">{item.icon}</span>
                 <div>
