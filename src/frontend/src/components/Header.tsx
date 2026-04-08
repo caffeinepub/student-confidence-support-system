@@ -3,6 +3,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { loadLocalProfile } from "../hooks/useLocalProfile";
+import AskSparkLogo from "./AskSparkLogo";
 import NotificationBell from "./NotificationBell";
 
 const NAV_LINKS = [
@@ -35,19 +36,13 @@ export default function Header() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center" data-ocid="nav.link">
           {/* Desktop: horizontal logo */}
-          <img
-            src="/assets/generated/askspark-logo-horizontal-transparent.dim_800x200.png"
-            alt="AskSpark"
-            className="hidden md:block h-10 w-auto object-contain"
-            style={{ filter: "drop-shadow(0 2px 8px rgba(99,102,241,0.35))" }}
+          <AskSparkLogo
+            variant="horizontal"
+            height={38}
+            className="hidden md:block"
           />
           {/* Mobile: icon only */}
-          <img
-            src="/assets/generated/askspark-icon-transparent.dim_512x512.png"
-            alt="AskSpark"
-            className="md:hidden h-9 w-9 object-contain"
-            style={{ filter: "drop-shadow(0 2px 8px rgba(99,102,241,0.35))" }}
-          />
+          <AskSparkLogo variant="icon" height={36} className="md:hidden" />
         </Link>
 
         <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-muted-foreground">

@@ -8,11 +8,11 @@ import {
   redirect,
 } from "@tanstack/react-router";
 import { Suspense, lazy } from "react";
-import { AppRole } from "./backend";
 import CallManager from "./components/CallManager";
 import PageSkeleton from "./components/PageSkeleton";
 import { loadLocalProfile } from "./hooks/useLocalProfile";
 import { useRoleSync } from "./hooks/useRoleSync";
+import { AppRole } from "./types/appTypes";
 
 const LandingPage = lazy(() => import("./pages/LandingPage"));
 const OnboardingPage = lazy(() => import("./pages/OnboardingPage"));

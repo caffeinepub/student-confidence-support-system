@@ -60,7 +60,7 @@ export interface backendInterface {
     getUnansweredDoubts(): Promise<Array<Doubt>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
-    saveCallerUserProfile(profile: UserProfile): Promise<void>;
+    saveCallerUserProfile(_profile: UserProfile): Promise<void>;
     submitDoubt(submission: DoubtSubmission): Promise<string>;
     submitUserProfile(displayName: string, role: AppRole): Promise<void>;
 }

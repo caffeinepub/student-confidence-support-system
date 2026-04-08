@@ -1,6 +1,6 @@
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { AppRole } from "../backend";
 import { loadLocalProfile, saveLocalProfile } from "../hooks/useLocalProfile";
+import { AppRole } from "../types/appTypes";
 import { db } from "./firebase";
 import { saveUserToFirestore } from "./useFirestoreUsers";
 

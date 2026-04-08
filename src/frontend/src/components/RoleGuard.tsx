@@ -1,8 +1,8 @@
 import { useNavigate } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { type ReactNode, useEffect } from "react";
-import { AppRole } from "../backend";
 import { useUserProfile } from "../hooks/useQueries";
+import { AppRole } from "../types/appTypes";
 
 export default function RoleGuard({
   children,

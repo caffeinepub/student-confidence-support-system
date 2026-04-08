@@ -1,6 +1,4 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Doubt, UserProfile } from "../backend";
-import type { AppRole } from "../backend";
 import {
   type FirestoreDoubt,
   answerDoubt as firestoreAnswerDoubt,
@@ -8,7 +6,7 @@ import {
   useAllDoubts as useFirestoreAllDoubts,
   useMyDoubts,
 } from "../lib/useFirestoreDoubts";
-import { useActor } from "./useActor";
+import type { AppRole, Doubt, UserProfile } from "../types/appTypes";
 import {
   type LocalProfile,
   getOrCreateUserId,
@@ -48,14 +46,18 @@ export function useCallerDoubts(): {
 }
 
 export function useConfidenceScore() {
-  const { actor, isFetching } = useActor();
   return useQuery<bigint>({
     queryKey: ["confidenceScore"],
     queryFn: async () => {
-      if (!actor) return BigInt(0);
-      return actor.getCallerConfidenceScore();
+      const stored = JSON.parse(
+        localStorage.getItem("askspark_doubts") || "[]",
+      ) as { userId?: string }[];
+      const userId = getOrCreateUserId();
+      const count = stored.filter((d) => d.userId === userId).length;
+      const score = Math.min(count * 10, 100);
+      return BigInt(score);
     },
-    enabled: !!actor && !isFetching,
+    staleTime: 30_000,
   });
 }
 
@@ -65,27 +67,30 @@ export function useAllDoubts(): { data: FirestoreDoubt[]; isLoading: boolean } {
 }
 
 export function useUnansweredDoubts() {
-  const { actor, isFetching } = useActor();
   return useQuery<Doubt[]>({
     queryKey: ["unansweredDoubts"],
     queryFn: async () => {
-      if (!actor) return [];
-      return actor.getUnansweredDoubts();
+      const stored = JSON.parse(
+        localStorage.getItem("askspark_doubts") || "[]",
+      ) as Doubt[];
+      return stored.filter((d) => !d.isAnswered);
     },
-    enabled: !!actor && !isFetching,
+    staleTime: 15_000,
     refetchInterval: 15_000,
   });
 }
 
 export function useNotificationCount() {
-  const { actor, isFetching } = useActor();
   return useQuery<bigint>({
     queryKey: ["notificationCount"],
     queryFn: async () => {
-      if (!actor) return BigInt(0);
-      return actor.getTeacherNotificationCount();
+      const stored = JSON.parse(
+        localStorage.getItem("askspark_doubts") || "[]",
+      ) as { isAnswered?: boolean }[];
+      const unanswered = stored.filter((d) => !d.isAnswered).length;
+      return BigInt(unanswered);
     },
-    enabled: !!actor && !isFetching,
+    staleTime: 20_000,
     refetchInterval: 20_000,
   });
 }

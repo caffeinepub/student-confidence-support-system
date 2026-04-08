@@ -1,7 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { AppRole } from "../backend";
 import { fetchRoleFromFirestore } from "../lib/useRoleSwitch";
+import { AppRole } from "../types/appTypes";
 import { loadLocalProfile, saveLocalProfile } from "./useLocalProfile";
 
 export function useRoleSync() {

@@ -8,10 +8,10 @@ import Principal "mo:core/Principal";
 import Runtime "mo:core/Runtime";
 import Int "mo:core/Int";
 
-import Storage "blob-storage/Storage";
-import AccessControl "authorization/access-control";
-import MixinAuthorization "authorization/MixinAuthorization";
-import MixinStorage "blob-storage/Mixin";
+import Storage "mo:caffeineai-object-storage/Storage";
+import AccessControl "mo:caffeineai-authorization/access-control";
+import MixinAuthorization "mo:caffeineai-authorization/MixinAuthorization";
+import MixinObjectStorage "mo:caffeineai-object-storage/Mixin";
 
 actor {
   type UserRole = AccessControl.UserRole;
@@ -65,7 +65,7 @@ actor {
 
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
-  include MixinStorage();
+  include MixinObjectStorage();
 
   // Helper function to check if user is a teacher
   func isTeacher(caller : Principal) : Bool {
@@ -94,7 +94,7 @@ actor {
   };
 
   // Helper function to check if user has a profile
-  func hasProfile(caller : Principal) : Bool {
+  func _hasProfile(caller : Principal) : Bool {
     switch (userProfiles.get(caller)) {
       case (?_) { true };
       case (null) { false };
@@ -257,7 +257,7 @@ actor {
     userProfiles.get(caller);
   };
 
-  public query ({ caller }) func saveCallerUserProfile(profile : UserProfile) : async () {
+  public query ({ caller = _ }) func saveCallerUserProfile(_profile : UserProfile) : async () {
     Runtime.trap("Not implemented: Use submitUserProfile instead");
   };
 

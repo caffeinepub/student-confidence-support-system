@@ -27,11 +27,12 @@ import {
   XCircle,
   Zap,
 } from "lucide-react";
-import { AppRole } from "../backend";
+import AskSparkLogo from "../components/AskSparkLogo";
 import Header from "../components/Header";
 import { loadLocalProfile, saveLocalProfile } from "../hooks/useLocalProfile";
 import { useUserProfile } from "../hooks/useQueries";
 import { saveUserToFirestore } from "../lib/useFirestoreUsers";
+import { AppRole } from "../types/appTypes";
 
 function HeroCard() {
   return (
@@ -268,14 +269,7 @@ export default function LandingPage() {
           <div className="space-y-7 animate-fade-up">
             {/* Hero logo */}
             <div className="flex items-center">
-              <img
-                src="/assets/generated/askspark-logo-horizontal-transparent.dim_800x200.png"
-                alt="AskSpark"
-                className="h-12 w-auto object-contain"
-                style={{
-                  filter: "drop-shadow(0 2px 12px rgba(99,102,241,0.4))",
-                }}
-              />
+              <AskSparkLogo variant="horizontal" height={48} />
             </div>
             <div className="inline-flex items-center gap-1.5 bg-white/70 text-primary border border-primary/20 text-sm font-medium px-4 py-1.5 rounded-full warm-shadow">
               <Sparkles className="w-3.5 h-3.5" />
@@ -726,11 +720,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-10">
           <div>
             <div className="flex items-center gap-2.5 mb-4">
-              <img
-                src="/assets/generated/askspark-icon-transparent.dim_512x512.png"
-                alt="AskSpark"
-                className="h-8 w-8 object-contain"
-              />
+              <AskSparkLogo variant="icon" height={32} />
               <span className="font-display text-lg font-bold text-white">
                 AskSpark
               </span>

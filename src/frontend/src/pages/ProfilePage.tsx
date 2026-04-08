@@ -24,7 +24,6 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { AppRole } from "../backend";
 import { loadLocalProfile, saveLocalProfile } from "../hooks/useLocalProfile";
 import type { LocalProfile } from "../hooks/useLocalProfile";
 import { saveUserToFirestore } from "../lib/useFirestoreUsers";
@@ -34,6 +33,7 @@ import {
   switchRole,
   verifyTeacherCode,
 } from "../lib/useRoleSwitch";
+import { AppRole } from "../types/appTypes";
 
 const INTERESTS = ["Maths", "Physics", "Programming", "Electronics", "Biology"];
 
